@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "FastAPI (depuração)",
+            "type": "debugpy",
+            "request": "launch",
+            "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+            "program": "${workspaceFolder}\\main.py",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        }
+    ]
+}
