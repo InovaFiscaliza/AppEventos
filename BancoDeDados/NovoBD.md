@@ -27,6 +27,48 @@ As seções abaixo são propostas preliminares e ainda não constituem um modelo
 - Detalhar os domínios dos seletores, especialmente a situação da emissão, e substituir descrições provisórias por referências quando aplicável.
 - Completar a documentação de chaves, índices, tipos físicos, valores padrão, criação dos registros e classificação de dados pessoais.
 - Definir o armazenamento externo dos anexos, mantendo no banco os metadados necessários, salvo exceção justificada.
+- Definir como a auditoria identificará o responsável pelas operações: o modelo não prevê uma tabela de usuários, e `TB_FISCAL` representa o cadastro funcional de fiscais, não uma identidade autenticada.
+
+### Resumo das Principais Tabelas
+
+| Tabela                   | Finalidade resumida                                                                                   |
+| ------------------------ | ----------------------------------------------------------------------------------------------------- |
+| `TB_EVENTO`            | Cadastro dos eventos, período, localização, processo e coordenação responsável.                 |
+| `TB_ESTACAO`           | Estações de monitoração vinculadas a um evento, com modelo, local e coordenadas.                  |
+| `TB_EMISSAO`           | Emissões de radiofrequência registradas no evento, com frequência, origem da captura e situação. |
+| `TB_INCIDENTE`         | Incidentes de fiscalização, como BSR e ERB Fake, com situação, local e observações.             |
+| `TB_TICKET`            | Acompanhamento de emissões e incidentes, com situação, prioridade e providências.                 |
+| `TB_TESTE_ETIQUETAGEM` | Testes de equipamentos, entidades responsáveis, permissões e etiquetas.                             |
+
+| Tabela de apoio                                   | Finalidade resumida                                                                                                     |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `TB_FISCAL`                                     | Cadastro funcional de fiscais, unidade e papéis permitidos; não representa usuários autenticados do sistema.         |
+| `TB_UNIDADE_EXECUTANTE`                         | Cadastro de unidades referenciadas por fiscais e eventos.                                                               |
+| `TB_MUNICIPIO`                                  | Referência de município e UF usada na localização do evento; sua definição não está detalhada neste documento.  |
+| `BRIDGE_EVENTO_UNIDADE_EXECUTANTE`              | Associação de eventos com uma ou mais unidades executantes. Nome provisório, a substituir por `TB_`.               |
+| `BRIDGE_EVENTO_FISCAL`                          | Associação de fiscais a eventos e às funções exercidas em cada evento. Nome provisório, a substituir por `TB_`. |
+| `BRIDGE_EMISSAO_FISCAL`                         | Associação dos fiscais participantes de cada emissão. Nome provisório, a substituir por `TB_`.                    |
+| `TB_EMISSAO_IMAGEM`                             | Metadados e referência externa das imagens anexadas às emissões.                                                     |
+| `TB_TIPO_INCIDENTE`                             | Domínio dos tipos de incidente, como BSR e ERB Fake.                                                                   |
+| `TB_SITUACAO`                                   | Domínio compartilhado das situações de emissões e incidentes.                                                       |
+| `TB_INCIDENTE_FISCAL`                           | Associação dos fiscais participantes de cada incidente.                                                               |
+| `TB_INCIDENTE_IMAGEM`                           | Metadados e referência externa das imagens anexadas aos incidentes.                                                    |
+| `TB_TICKET_EMISSAO`                             | Associação entre tickets e emissões.                                                                                 |
+| `TB_TICKET_INCIDENTE`                           | Associação entre tickets e incidentes.                                                                                |
+| `TB_TICKET_FISCAL`                              | Associação dos fiscais atribuídos a cada ticket.                                                                     |
+| Domínio de situação do ticket (nome a definir) | Valores permitidos e transições da situação do ticket.                                                              |
+| Domínio de prioridade do ticket (nome a definir) | Valores de prioridade disponíveis para tickets.                                                                        |
+| `TB_TESTE_ETIQUETAGEM_FREQUENCIA`               | Frequências, bandas e faixas registradas em cada teste.                                                                |
+| `TB_PERFIL_ENTIDADE`                            | Domínio dos perfis de pessoa física, pessoa jurídica e estrangeiro.                                                  |
+| `TB_LICENCA`                                    | Domínio dos enquadramentos de licença apresentados no teste.                                                          |
+| `TB_TIPO_EQUIPAMENTO`                           | Domínio dos tipos de equipamento etiquetados.                                                                          |
+| `TB_PERMISSAO_ETIQUETA`                         | Domínio das permissões associadas à etiqueta.                                                                        |
+| `TB_BANDA`                                      | Domínio das bandas e, após confirmação, de sua largura e unidade.                                                   |
+| `TB_FAIXA`                                      | Domínio das faixas de frequência.                                                                                     |
+| `TB_TESTE_ETIQUETAGEM_ETIQUETA`                 | Uma linha por etiqueta vinculada ao teste.                                                                              |
+| `TB_TESTE_ETIQUETAGEM_IMAGEM`                   | Metadados e referência externa das imagens do equipamento testado.                                                     |
+
+Os domínios dos seletores da emissão que ainda não têm tabela definida e a estrutura das tabelas de auditoria permanecem pendentes de detalhamento. Os nomes, relacionamentos e regras das tabelas de apoio também devem ser consolidados conforme as adequações pendentes acima.
 
 O item 1 da norma exige Microsoft SQL Server 2014, modelo físico e SAP Power Designer 16.7 ou superior, com aprovação da Gerência de Informações e Biblioteca (GIIB) para exceções de banco. As instruções atuais do projeto mencionam PostgreSQL. Essa divergência precisa ser resolvida antes de definir o modelo físico ou gerar scripts; este documento não autoriza troca de tecnologia nem presume aprovação de exceção. Views, procedimentos, funções e gatilhos também dependem da autorização prevista na norma.
 
@@ -34,20 +76,20 @@ O item 1 da norma exige Microsoft SQL Server 2014, modelo físico e SAP Power De
 
 Armazena os dados do evento apresentados na janela **Gerenciar Eventos**. Esta proposta utiliza tipos lógicos; os tipos específicos serão definidos após a escolha do banco de dados.
 
-| Campo | Tipo lógico | Descrição |
-| --- | --- | --- |
-| `ID_EVENTO` | Inteiro | Chave primária do evento, gerada automaticamente. |
-| `NO_EVENTO` | Texto curto | Nome do evento. Obrigatório, conforme indicado na tela. |
-| `VR_LATITUDE` | Decimal | Latitude do local do evento, entre -90 e 90. |
-| `VR_LONGITUDE` | Decimal | Longitude do local do evento, entre -180 e 180. |
-| `CO_MUNICIPIO_IBGE` | Inteiro | Chave estrangeira para `TB_MUNICIPIO.CO_MUNICIPIO_IBGE`, identificando a cidade selecionada. |
-| `DE_ACAO_FISCALIZACAO` | Texto curto | Ação de fiscalização informada para o evento. |
-| `CO_PROCESSO_SEI` | Texto curto | Identificador do processo SEI. Deve ser textual para preservar zeros e formatação. |
-| `ID_FISCAL_RESPONSAVEL` | Inteiro | Chave estrangeira para `TB_FISCAL.ID_FISCAL`, no papel de coordenador responsável. |
-| `DT_INICIO_EVENTO` | Data | Início do período de realização. |
-| `DT_FIM_EVENTO` | Data | Fim do período de realização. |
-| `IC_TESTE_ETIQUETAGEM` | Booleano | Indica se o evento possui teste de etiquetagem: sim ou não. |
-| `TX_OBSERVACAO` | Texto longo | Observações sobre o evento. |
+| Campo                     | Tipo lógico | Descrição                                                                                    |
+| ------------------------- | ------------ | ---------------------------------------------------------------------------------------------- |
+| `ID_EVENTO`             | Inteiro      | Chave primária do evento, gerada automaticamente.                                             |
+| `NO_EVENTO`             | Texto curto  | Nome do evento. Obrigatório, conforme indicado na tela.                                       |
+| `VR_LATITUDE`           | Decimal      | Latitude do local do evento, entre -90 e 90.                                                   |
+| `VR_LONGITUDE`          | Decimal      | Longitude do local do evento, entre -180 e 180.                                                |
+| `CO_MUNICIPIO_IBGE`     | Inteiro      | Chave estrangeira para `TB_MUNICIPIO.CO_MUNICIPIO_IBGE`, identificando a cidade selecionada. |
+| `DE_ACAO_FISCALIZACAO`  | Texto curto  | Ação de fiscalização informada para o evento.                                              |
+| `CO_PROCESSO_SEI`       | Texto curto  | Identificador do processo SEI. Deve ser textual para preservar zeros e formatação.           |
+| `ID_FISCAL_RESPONSAVEL` | Inteiro      | Chave estrangeira para `TB_FISCAL.ID_FISCAL`, no papel de coordenador responsável.          |
+| `DT_INICIO_EVENTO`      | Data         | Início do período de realização.                                                           |
+| `DT_FIM_EVENTO`         | Data         | Fim do período de realização.                                                               |
+| `IC_TESTE_ETIQUETAGEM`  | Booleano     | Indica se o evento possui teste de etiquetagem: sim ou não.                                   |
+| `TX_OBSERVACAO`         | Texto longo  | Observações sobre o evento.                                                                  |
 
 ### Localização
 
@@ -59,10 +101,10 @@ Armazena os dados do evento apresentados na janela **Gerenciar Eventos**. Esta p
 
 As listas permitem selecionar várias unidades executantes e vários fiscais. Esses vínculos não devem ser armazenados como listas de identificadores em uma coluna de `TB_EVENTO`.
 
-| Relacionamento proposto | Cardinalidade | Dados do vínculo |
-| --- | --- | --- |
-| `BRIDGE_EVENTO_UNIDADE_EXECUTANTE` | Muitos para muitos entre eventos e unidades | `ID_EVENTO` e `SG_UNIDADE_EXECUTANTE`, referenciando as chaves de `TB_EVENTO` e `TB_UNIDADE_EXECUTANTE`. Cada par deve ser único. |
-| `BRIDGE_EVENTO_FISCAL` | Muitos para muitos entre eventos e fiscais | `ID_EVENTO`, `ID_FISCAL` e os indicadores booleanos `IC_COORDENACAO`, `IC_ABORDAGEM` e `IC_MONITORACAO`. Cada par evento/fiscal deve ser único. |
+| Relacionamento proposto              | Cardinalidade                               | Dados do vínculo                                                                                                                                          |
+| ------------------------------------ | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `BRIDGE_EVENTO_UNIDADE_EXECUTANTE` | Muitos para muitos entre eventos e unidades | `ID_EVENTO` e `SG_UNIDADE_EXECUTANTE`, referenciando as chaves de `TB_EVENTO` e `TB_UNIDADE_EXECUTANTE`. Cada par deve ser único.                 |
+| `BRIDGE_EVENTO_FISCAL`             | Muitos para muitos entre eventos e fiscais  | `ID_EVENTO`, `ID_FISCAL` e os indicadores booleanos `IC_COORDENACAO`, `IC_ABORDAGEM` e `IC_MONITORACAO`. Cada par evento/fiscal deve ser único. |
 
 Os indicadores de atuação pertencem à participação do fiscal no evento, não ao cadastro geral do fiscal. A tela permite marcar mais de um indicador para o mesmo participante.
 
@@ -85,15 +127,15 @@ Os indicadores de atuação pertencem à participação do fiscal no evento, nã
 
 Armazena as estações de monitoração cadastradas pela janela **Cadastro de Estações**, vinculadas ao evento selecionado. Os tipos abaixo são lógicos, seguindo o mesmo nível de definição de `TB_EVENTO`.
 
-| Campo | Tipo lógico | Obrigatório | Descrição |
-| --- | --- | --- | --- |
-| `ID_ESTACAO` | Inteiro | Sim | Chave primária da estação, gerada automaticamente. |
-| `ID_EVENTO` | Inteiro | Sim | Chave estrangeira para `TB_EVENTO.ID_EVENTO`. Corresponde ao seletor Evento. |
-| `NO_ESTACAO` | Texto curto | Sim | Identificação da estação informada no formulário. |
-| `DE_MODELO_EQUIPAMENTO` | Texto curto | Sim | Modelo do equipamento escolhido no seletor Modelo. |
-| `DE_LOCAL` | Texto curto | Sim | Local de instalação ou operação da estação. |
-| `VR_LATITUDE` | Decimal | Sim | Latitude da estação em graus decimais, entre -90 e 90. |
-| `VR_LONGITUDE` | Decimal | Sim | Longitude da estação em graus decimais, entre -180 e 180. |
+| Campo                     | Tipo lógico | Obrigatório | Descrição                                                                    |
+| ------------------------- | ------------ | ------------ | ------------------------------------------------------------------------------ |
+| `ID_ESTACAO`            | Inteiro      | Sim          | Chave primária da estação, gerada automaticamente.                          |
+| `ID_EVENTO`             | Inteiro      | Sim          | Chave estrangeira para `TB_EVENTO.ID_EVENTO`. Corresponde ao seletor Evento. |
+| `NO_ESTACAO`            | Texto curto  | Sim          | Identificação da estação informada no formulário.                         |
+| `DE_MODELO_EQUIPAMENTO` | Texto curto  | Sim          | Modelo do equipamento escolhido no seletor Modelo.                             |
+| `DE_LOCAL`              | Texto curto  | Sim          | Local de instalação ou operação da estação.                              |
+| `VR_LATITUDE`           | Decimal      | Sim          | Latitude da estação em graus decimais, entre -90 e 90.                       |
+| `VR_LONGITUDE`          | Decimal      | Sim          | Longitude da estação em graus decimais, entre -180 e 180.                    |
 
 ### Relacionamento com Evento
 
@@ -103,12 +145,12 @@ Armazena as estações de monitoração cadastradas pela janela **Cadastro de Es
 
 ### Chaves e Restrições
 
-| Objeto | Nome | Definição |
-| --- | --- | --- |
-| Chave primária | `PK_TB_ESTACAO` | Coluna `ID_ESTACAO`. |
-| Chave estrangeira | `FK_TB_ESTACAO_TB_EVENTO` | Coluna `ID_EVENTO` referenciando `TB_EVENTO.ID_EVENTO`. |
-| Validação de latitude | `CC_TB_ESTACAO_VR_LATITUDE_01` | `VR_LATITUDE` entre -90 e 90. |
-| Validação de longitude | `CC_TB_ESTACAO_VR_LONGITUDE_01` | `VR_LONGITUDE` entre -180 e 180. |
+| Objeto                   | Nome                              | Definição                                                 |
+| ------------------------ | --------------------------------- | ----------------------------------------------------------- |
+| Chave primária          | `PK_TB_ESTACAO`                 | Coluna `ID_ESTACAO`.                                      |
+| Chave estrangeira        | `FK_TB_ESTACAO_TB_EVENTO`       | Coluna `ID_EVENTO` referenciando `TB_EVENTO.ID_EVENTO`. |
+| Validação de latitude  | `CC_TB_ESTACAO_VR_LATITUDE_01`  | `VR_LATITUDE` entre -90 e 90.                             |
+| Validação de longitude | `CC_TB_ESTACAO_VR_LONGITUDE_01` | `VR_LONGITUDE` entre -180 e 180.                          |
 
 ### Regras de Consistência
 
@@ -129,46 +171,46 @@ Armazena as estações de monitoração cadastradas pela janela **Cadastro de Es
 
 Armazena os registros de emissões de radiofrequência apresentados na janela **Inserir emissão**. O nome acompanha a terminologia da tela; a referência de auditoria denomina essa entidade `TB_OCORRENCIA`. Nesta proposta, utilizam-se `TB_EMISSAO` e `ID_EMISSAO`, preservando os padrões de nomenclatura, sem criar duas entidades para o mesmo registro.
 
-| Campo | Tipo lógico | Obrigatório | Descrição |
-| --- | --- | --- | --- |
-| `ID_EMISSAO` | Inteiro | Sim | Chave primária da emissão, gerada automaticamente. |
-| `ID_EVENTO` | Inteiro | Sim | Chave estrangeira para `TB_EVENTO.ID_EVENTO`. Obtida do contexto do evento, embora não apareça no recorte da tela. |
-| `DT_EMISSAO` | Data | Sim | Data da emissão informada no formulário. |
-| `HH_EMISSAO` | Hora | Sim | Hora da emissão informada no formulário. |
-| `DE_LOCAL_REGIAO` | Texto curto | Não | Local ou região da emissão. |
-| `DE_ORIGEM_CAPTURA` | Texto curto | Sim | Opção selecionada em Captura realizada por. As opções e sua representação definitiva precisam ser confirmadas. |
-| `ID_ESTACAO` | Inteiro | Condicional | Chave estrangeira para `TB_ESTACAO.ID_ESTACAO`, quando a captura estiver vinculada a uma estação. |
-| `VR_FREQUENCIA_MHZ` | Decimal | Sim | Frequência central da emissão, em MHz. |
-| `VR_LARGURA_KHZ` | Decimal | Sim | Largura de banda ocupada, em kHz, selecionada no formulário. |
-| `DE_FAIXA` | Texto curto | Sim | Faixa relacionada selecionada no formulário. |
-| `DE_IDENTIFICACAO` | Texto curto | Sim | Identificação selecionada para a emissão. |
-| `DE_INTERFERENTE` | Texto curto | Sim | Resposta ao campo Interferente?. Mantida como texto até confirmar todas as opções do seletor. |
-| `IC_UTE` | Booleano | Sim | Indica se a emissão corresponde a um usuário temporário de espectro. Tipo proposto caso o seletor UTE? contenha apenas sim e não. |
-| `TX_OBSERVACAO` | Texto longo | Sim | Conteúdo do campo Entidade Resp./Contato/Observações, preservado como um único campo conforme a tela. |
-| `CO_SITUACAO` | Texto curto | Sim | Código da situação da emissão, conforme os estados descritos abaixo. |
+| Campo                 | Tipo lógico | Obrigatório | Descrição                                                                                                                           |
+| --------------------- | ------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `ID_EMISSAO`        | Inteiro      | Sim          | Chave primária da emissão, gerada automaticamente.                                                                                  |
+| `ID_EVENTO`         | Inteiro      | Sim          | Chave estrangeira para `TB_EVENTO.ID_EVENTO`. Obtida do contexto do evento, embora não apareça no recorte da tela.                |
+| `DT_EMISSAO`        | Data         | Sim          | Data da emissão informada no formulário.                                                                                            |
+| `HH_EMISSAO`        | Hora         | Sim          | Hora da emissão informada no formulário.                                                                                            |
+| `DE_LOCAL_REGIAO`   | Texto curto  | Não         | Local ou região da emissão.                                                                                                         |
+| `DE_ORIGEM_CAPTURA` | Texto curto  | Sim          | Opção selecionada em Captura realizada por. As opções e sua representação definitiva precisam ser confirmadas.                  |
+| `ID_ESTACAO`        | Inteiro      | Condicional  | Chave estrangeira para `TB_ESTACAO.ID_ESTACAO`, quando a captura estiver vinculada a uma estação.                                 |
+| `VR_FREQUENCIA_MHZ` | Decimal      | Sim          | Frequência central da emissão, em MHz.                                                                                              |
+| `VR_LARGURA_KHZ`    | Decimal      | Sim          | Largura de banda ocupada, em kHz, selecionada no formulário.                                                                         |
+| `DE_FAIXA`          | Texto curto  | Sim          | Faixa relacionada selecionada no formulário.                                                                                         |
+| `DE_IDENTIFICACAO`  | Texto curto  | Sim          | Identificação selecionada para a emissão.                                                                                          |
+| `DE_INTERFERENTE`   | Texto curto  | Sim          | Resposta ao campo Interferente?. Mantida como texto até confirmar todas as opções do seletor. **BOOL**                            |
+| `IC_UTE`            | Booleano     | Sim          | Indica se a emissão corresponde a um usuário temporário de espectro. Tipo proposto caso o seletor UTE? contenha apenas sim e não. |
+| `TX_OBSERVACAO`     | Texto longo  | Sim          | Conteúdo do campo Entidade Resp./Contato/Observações, preservado como um único campo conforme a tela.                             |
+| `CO_SITUACAO`       | Texto curto  | Sim          | Código da situação da emissão, conforme os estados descritos abaixo.                                                              |
 
 O campo Fiscal é obrigatório na tela e possui um botão `+`. A proposta admite vários fiscais participantes, armazenados no relacionamento abaixo, e não como nomes ou listas de identificadores em `TB_EMISSAO`.
 
 ### Relacionamentos
 
-| Objeto proposto | Cardinalidade | Dados e regras |
-| --- | --- | --- |
-| `TB_EVENTO` | Um evento para muitas emissões | Cada emissão pertence a um evento, por `ID_EVENTO`. |
-| `TB_ESTACAO` | Uma estação para muitas emissões | Vínculo opcional ou condicional por `ID_ESTACAO`; a estação deve pertencer ao mesmo evento da emissão. |
-| `BRIDGE_EMISSAO_FISCAL` | Muitos para muitos entre emissões e fiscais | Colunas `ID_EMISSAO` e `ID_FISCAL`, referenciando `TB_EMISSAO` e `TB_FISCAL`. Cada par deve ser único; deve existir ao menos um fiscal por emissão. |
-| `TB_EMISSAO_IMAGEM` | Uma emissão para muitas imagens | Cada imagem possui identificador próprio e referência `ID_EMISSAO`. Nome do arquivo, tipo, tamanho e forma de armazenamento serão detalhados no projeto de anexos. A inclusão de imagens é opcional. |
+| Objeto proposto           | Cardinalidade                                | Dados e regras                                                                                                                                                                                                    |
+| ------------------------- | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TB_EVENTO`             | Um evento para muitas emissões              | Cada emissão pertence a um evento, por `ID_EVENTO`.                                                                                                                                                            |
+| `TB_ESTACAO`            | Uma estação para muitas emissões          | Vínculo opcional ou condicional por `ID_ESTACAO`; a estação deve pertencer ao mesmo evento da emissão.                                                                                                      |
+| `BRIDGE_EMISSAO_FISCAL` | Muitos para muitos entre emissões e fiscais | Colunas `ID_EMISSAO` e `ID_FISCAL`, referenciando `TB_EMISSAO` e `TB_FISCAL`. Cada par deve ser único; deve existir ao menos um fiscal por emissão.                                                     |
+| `TB_EMISSAO_IMAGEM`     | Uma emissão para muitas imagens             | Cada imagem possui identificador próprio e referência `ID_EMISSAO`. Nome do arquivo, tipo, tamanho e forma de armazenamento serão detalhados no projeto de anexos. A inclusão de imagens é opcional. ANEXO |
 
 ### Chaves
 
-| Objeto | Nome | Definição |
-| --- | --- | --- |
-| Chave primária | `PK_TB_EMISSAO` | Coluna `ID_EMISSAO`. |
-| Chave estrangeira de evento | `FK_TB_EMISSAO_TB_EVENTO` | `ID_EVENTO` referenciando `TB_EVENTO.ID_EVENTO`. |
+| Objeto                         | Nome                         | Definição                                             |
+| ------------------------------ | ---------------------------- | ------------------------------------------------------- |
+| Chave primária                | `PK_TB_EMISSAO`            | Coluna `ID_EMISSAO`.                                  |
+| Chave estrangeira de evento    | `FK_TB_EMISSAO_TB_EVENTO`  | `ID_EVENTO` referenciando `TB_EVENTO.ID_EVENTO`.    |
 | Chave estrangeira de estação | `FK_TB_EMISSAO_TB_ESTACAO` | `ID_ESTACAO` referenciando `TB_ESTACAO.ID_ESTACAO`. |
 
 ### Situação da Emissão
 
-- Os estados funcionais são `Pendente`, `Concluída Pelo Fiscal` e `Concluída Pelo Coordenador`. Os códigos armazenados em `CO_SITUACAO` ainda serão definidos.
+- Os estados funcionais são `Pendente`, `Concluída Pelo Fiscal (Virar Relatada)` e `Concluída Pelo Coordenador (Conferida ou Aprovada)`. Os códigos armazenados em `CO_SITUACAO` ainda serão definidos.
 - A mensagem da tela informa que emissões pendentes e concluídas pelo fiscal serão submetidas à inspeção da coordenação.
 - As permissões e transições entre estados devem ser definidas antes da implementação; a imagem não permite concluir quais opções cada perfil pode selecionar.
 
@@ -185,7 +227,7 @@ O campo Fiscal é obrigatório na tela e possui um botão `+`. A proposta admite
 
 ### Pontos a Confirmar
 
-- Opções dos seletores Captura realizada por, Faixa relacionada, Identificação, Interferente? e UTE?, incluindo eventuais respostas além de sim e não.
+- Opções dos seletores Captura realizada por, Faixa ( Tirar e colocar algo  mais semântico - )relacionada, Identificação, Interferente? e UTE?, incluindo eventuais respostas além de sim e não.
 - Quais seletores terão tabelas de domínio próprias, substituindo as descrições por chaves estrangeiras.
 - Como a seleção da origem da captura determina o vínculo com uma estação.
 - Se os fiscais selecionáveis devem estar vinculados previamente ao evento e se haverá distinção entre fiscal participante e autor do cadastro.
@@ -198,24 +240,24 @@ Armazena o cadastro global dos fiscais apresentado na janela **Fiscais cadastrad
 
 A tela não apresenta asteriscos de obrigatoriedade. As indicações abaixo são propostas de consistência a confirmar, e os tipos permanecem lógicos.
 
-| Campo | Tipo lógico | Obrigatório proposto | Descrição |
-| --- | --- | --- | --- |
-| `ID_FISCAL` | Inteiro | Sim | Chave primária do fiscal, gerada automaticamente. |
-| `NO_FISCAL` | Texto curto | Sim | Nome do fiscal. Corresponde ao campo Nome. |
-| `SG_UNIDADE_EXECUTANTE` | Texto curto | Sim | Chave estrangeira para `TB_UNIDADE_EXECUTANTE.SG_UNIDADE_EXECUTANTE`. Corresponde à GR ou UO selecionada em Local Anatel. |
-| `IC_COORDENACAO` | Booleano | Sim | Indica se o fiscal pode exercer o papel de Coordenação. |
-| `IC_ABORDAGEM` | Booleano | Sim | Indica se o fiscal pode exercer o papel de Abordagem. |
-| `IC_MONITORACAO` | Booleano | Sim | Indica se o fiscal pode exercer o papel de Monitoração. |
+| Campo                     | Tipo lógico | Obrigatório proposto | Descrição                                                                                                                  |
+| ------------------------- | ------------ | --------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `ID_FISCAL`             | Inteiro      | Sim                   | Chave primária do fiscal, gerada automaticamente.                                                                           |
+| `NO_FISCAL`             | Texto curto  | Sim                   | Nome do fiscal. Corresponde ao campo Nome.                                                                                   |
+| `SG_UNIDADE_EXECUTANTE` | Texto curto  | Sim                   | Chave estrangeira para `TB_UNIDADE_EXECUTANTE.SG_UNIDADE_EXECUTANTE`. Corresponde à GR ou UO selecionada em Local Anatel. |
+| `IC_COORDENACAO`        | Booleano     | Sim                   | Indica se o fiscal pode exercer o papel de Coordenação.                                                                    |
+| `IC_ABORDAGEM`          | Booleano     | Sim                   | Indica se o fiscal pode exercer o papel de Abordagem.                                                                        |
+| `IC_MONITORACAO`        | Booleano     | Sim                   | Indica se o fiscal pode exercer o papel de Monitoração.                                                                    |
 
 Nesta proposta, os três papéis fixos da tela são representados por indicadores independentes, em vez da coleção `CO_PAPEIS` existente na referência de auditoria. A nomenclatura segue os prefixos da referência, mas a forma de armazenamento é uma proposta para o novo sistema. Indicador desmarcado corresponde a falso, não a valor nulo.
 
 ### Relacionamentos
 
-| Objeto | Cardinalidade | Dados e regras |
-| --- | --- | --- |
-| `TB_UNIDADE_EXECUTANTE` | Uma unidade para muitos fiscais | Cada fiscal referencia uma unidade por `SG_UNIDADE_EXECUTANTE`. A descrição exibida em Local Anatel vem do cadastro da unidade, sem duplicação em `TB_FISCAL`. |
-| `BRIDGE_EVENTO_FISCAL` | Muitos para muitos entre eventos e fiscais | Reutiliza `ID_EVENTO` e `ID_FISCAL`, com os indicadores das funções exercidas naquele evento. |
-| `BRIDGE_EMISSAO_FISCAL` | Muitos para muitos entre emissões e fiscais | Reutiliza `ID_EMISSAO` e `ID_FISCAL` para identificar os participantes da emissão. |
+| Objeto                    | Cardinalidade                                | Dados e regras                                                                                                                                                         |
+| ------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TB_UNIDADE_EXECUTANTE` | Uma unidade para muitos fiscais              | Cada fiscal referencia uma unidade por `SG_UNIDADE_EXECUTANTE`. A descrição exibida em Local Anatel vem do cadastro da unidade, sem duplicação em `TB_FISCAL`. |
+| `BRIDGE_EVENTO_FISCAL`  | Muitos para muitos entre eventos e fiscais   | Reutiliza `ID_EVENTO` e `ID_FISCAL`, com os indicadores das funções exercidas naquele evento.                                                                    |
+| `BRIDGE_EMISSAO_FISCAL` | Muitos para muitos entre emissões e fiscais | Reutiliza `ID_EMISSAO` e `ID_FISCAL` para identificar os participantes da emissão.                                                                                |
 
 ### Papéis Permitidos e Funções no Evento
 
@@ -226,9 +268,9 @@ Nesta proposta, os três papéis fixos da tela são representados por indicadore
 
 ### Chaves e Regras de Consistência
 
-| Objeto | Nome | Definição |
-| --- | --- | --- |
-| Chave primária | `PK_TB_FISCAL` | Coluna `ID_FISCAL`. |
+| Objeto                       | Nome                                   | Definição                                                                                 |
+| ---------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Chave primária              | `PK_TB_FISCAL`                       | Coluna `ID_FISCAL`.                                                                       |
 | Chave estrangeira de unidade | `FK_TB_FISCAL_TB_UNIDADE_EXECUTANTE` | `SG_UNIDADE_EXECUTANTE` referenciando a chave de mesmo nome em `TB_UNIDADE_EXECUTANTE`. |
 
 - O nome não deve conter apenas espaços. Não se propõe unicidade por nome, pois podem existir homônimos.
@@ -251,18 +293,18 @@ Armazena os incidentes identificados durante a fiscalização, conforme a janela
 
 Os tipos abaixo são lógicos. O vínculo com o evento e a data e hora de criação são dados de contexto e rastreabilidade, não campos apresentados no recorte da tela.
 
-| Campo | Tipo lógico | Obrigatório | Descrição |
-| --- | --- | --- | --- |
-| `ID_INCIDENTE` | Inteiro | Sim | Chave primária - TB_INCIDENTE. Identificador gerado automaticamente. |
-| `ID_EVENTO` | Inteiro | Sim | Chave primária - TB_EVENTO. Identifica o evento em cujo contexto o incidente foi registrado. |
-| `CO_TIPO_INCIDENTE` | Código textual | Sim | Chave primária - TB_TIPO_INCIDENTE. Classifica o incidente conforme o seletor Tipo. |
-| `CO_SITUACAO` | Código textual | Sim | Chave primária - TB_SITUACAO. Representa o estado de tratamento escolhido em Status. |
-| `DE_LOCAL` | Texto curto | Sim | Descrição do local onde o incidente foi identificado. |
-| `VR_LATITUDE` | Decimal | Não | Latitude do incidente em graus decimais, entre -90 e 90. |
-| `VR_LONGITUDE` | Decimal | Não | Longitude do incidente em graus decimais, entre -180 e 180. |
-| `GE_PONTO` | Geometria de ponto | Condicional | Posição formada pelas coordenadas, conforme o item 7.6.5 da norma. Deve existir quando o par de coordenadas estiver informado. |
-| `TX_OBSERVACAO` | Texto longo | Sim | Informações descritivas sobre o incidente e as circunstâncias observadas. |
-| `DH_CRIACAO` | Data e hora | Sim | Momento de criação do registro, preenchido automaticamente pela aplicação. Não representa necessariamente o momento em que o incidente ocorreu. |
+| Campo                 | Tipo lógico       | Obrigatório | Descrição                                                                                                                                          |
+| --------------------- | ------------------ | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ID_INCIDENTE`      | Inteiro            | Sim          | Chave primária - TB_INCIDENTE. Identificador gerado automaticamente.                                                                                |
+| `ID_EVENTO`         | Inteiro            | Sim          | Chave primária - TB_EVENTO. Identifica o evento em cujo contexto o incidente foi registrado.                                                        |
+| `CO_TIPO_INCIDENTE` | Código textual    | Sim          | Chave primária - TB_TIPO_INCIDENTE. Classifica o incidente conforme o seletor Tipo.                                                                 |
+| `CO_SITUACAO`       | Código textual    | Sim          | Chave primária - TB_SITUACAO. Representa o estado de tratamento escolhido em Status.                                                                |
+| `DE_LOCAL`          | Texto curto        | Sim          | Descrição do local onde o incidente foi identificado.                                                                                              |
+| `VR_LATITUDE`       | Decimal            | Não         | Latitude do incidente em graus decimais, entre -90 e 90.                                                                                             |
+| `VR_LONGITUDE`      | Decimal            | Não         | Longitude do incidente em graus decimais, entre -180 e 180.                                                                                          |
+| `GE_PONTO`          | Geometria de ponto | Condicional  | Posição formada pelas coordenadas, conforme o item 7.6.5 da norma. Deve existir quando o par de coordenadas estiver informado.                     |
+| `TX_OBSERVACAO`     | Texto longo        | Sim          | Informações descritivas sobre o incidente e as circunstâncias observadas.                                                                         |
+| `DH_CRIACAO`        | Data e hora        | Sim          | Momento de criação do registro, preenchido automaticamente pela aplicação. Não representa necessariamente o momento em que o incidente ocorreu. |
 
 ### Domínios
 
@@ -273,28 +315,28 @@ Os tipos abaixo são lógicos. O vínculo com o evento e a data e hora de criaç
 
 ### Relacionamentos
 
-| Objeto proposto | Cardinalidade | Dados e regras |
-| --- | --- | --- |
-| `TB_EVENTO` | Um evento para muitos incidentes | Cada incidente pertence a um evento por `ID_EVENTO`. |
-| `TB_TIPO_INCIDENTE` | Um tipo para muitos incidentes | Cada incidente possui um tipo por `CO_TIPO_INCIDENTE`. |
-| `TB_SITUACAO` | Uma situação para muitos incidentes | Cada incidente possui uma situação atual por `CO_SITUACAO`. |
+| Objeto proposto         | Cardinalidade                                 | Dados e regras                                                                                                                                                                                                                                                    |
+| ----------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TB_EVENTO`           | Um evento para muitos incidentes              | Cada incidente pertence a um evento por `ID_EVENTO`.                                                                                                                                                                                                            |
+| `TB_TIPO_INCIDENTE`   | Um tipo para muitos incidentes                | Cada incidente possui um tipo por `CO_TIPO_INCIDENTE`.                                                                                                                                                                                                          |
+| `TB_SITUACAO`         | Uma situação para muitos incidentes         | Cada incidente possui uma situação atual por `CO_SITUACAO`.                                                                                                                                                                                                   |
 | `TB_INCIDENTE_FISCAL` | Muitos para muitos entre incidentes e fiscais | Chave simples `ID_INCIDENTE_FISCAL`, gerada automaticamente, e referências `ID_INCIDENTE` e `ID_FISCAL`. Criar índice único para o par incidente/fiscal. Deve existir ao menos um participante, conforme o campo Fiscal obrigatório e seu botão `+`. |
-| `TB_INCIDENTE_IMAGEM` | Um incidente para muitas imagens | Cada foto possui identificador próprio `ID_INCIDENTE_IMAGEM` e referência `ID_INCIDENTE`. Armazenar metadados e referência ao arquivo externo; o conteúdo binário no banco depende de exceção justificada. Fotos são opcionais. |
+| `TB_INCIDENTE_IMAGEM` | Um incidente para muitas imagens (ANEXOS)     | Cada foto possui identificador próprio `ID_INCIDENTE_IMAGEM` e referência `ID_INCIDENTE`. Armazenar metadados e referência ao arquivo externo; o conteúdo binário no banco depende de exceção justificada. Fotos são opcionais.                       |
 
 ### Chaves, Índices e Validações
 
-| Objeto | Nome | Definição |
-| --- | --- | --- |
-| Chave primária | `PK_TB_INCIDENTE` | Coluna `ID_INCIDENTE`. |
-| Chave estrangeira de evento | `FK_TB_INCIDENTE_TB_EVENTO` | `ID_EVENTO` referenciando `TB_EVENTO.ID_EVENTO`. |
-| Chave estrangeira de tipo | `FK_TB_INCIDENTE_TB_TIPO_INCIDENTE` | `CO_TIPO_INCIDENTE` referenciando a chave de mesmo nome em `TB_TIPO_INCIDENTE`. |
-| Chave estrangeira de situação | `FK_TB_INCIDENTE_TB_SITUACAO` | `CO_SITUACAO` referenciando a chave de mesmo nome em `TB_SITUACAO`. |
-| Índice de evento | `IX_TB_INCIDENTE_01` | Coluna `ID_EVENTO`. |
-| Índice de tipo | `IX_TB_INCIDENTE_02` | Coluna `CO_TIPO_INCIDENTE`. |
-| Índice de situação | `IX_TB_INCIDENTE_03` | Coluna `CO_SITUACAO`. |
-| Índice espacial | `IX_TB_INCIDENTE_04` | Campo `GE_PONTO`. Implementação dependente do banco escolhido. |
-| Validação de latitude | `CC_TB_INCIDENTE_VR_LATITUDE_01` | Quando informada, latitude entre -90 e 90. |
-| Validação de longitude | `CC_TB_INCIDENTE_VR_LONGITUDE_01` | Quando informada, longitude entre -180 e 180. |
+| Objeto                          | Nome                                  | Definição                                                                         |
+| ------------------------------- | ------------------------------------- | ----------------------------------------------------------------------------------- |
+| Chave primária                 | `PK_TB_INCIDENTE`                   | Coluna `ID_INCIDENTE`.                                                            |
+| Chave estrangeira de evento     | `FK_TB_INCIDENTE_TB_EVENTO`         | `ID_EVENTO` referenciando `TB_EVENTO.ID_EVENTO`.                                |
+| Chave estrangeira de tipo       | `FK_TB_INCIDENTE_TB_TIPO_INCIDENTE` | `CO_TIPO_INCIDENTE` referenciando a chave de mesmo nome em `TB_TIPO_INCIDENTE`. |
+| Chave estrangeira de situação | `FK_TB_INCIDENTE_TB_SITUACAO`       | `CO_SITUACAO` referenciando a chave de mesmo nome em `TB_SITUACAO`.             |
+| Índice de evento               | `IX_TB_INCIDENTE_01`                | Coluna `ID_EVENTO`. (retirar)                                                     |
+| Índice de tipo                 | `IX_TB_INCIDENTE_02`                | Coluna `CO_TIPO_INCIDENTE`.                                                       |
+| Índice de situação           | `IX_TB_INCIDENTE_03`                | Coluna `CO_SITUACAO`.                                                             |
+| Índice espacial                | `IX_TB_INCIDENTE_04`                | Campo `GE_PONTO`. Implementação dependente do banco escolhido.  (APAGAR)       |
+| Validação de latitude         | `CC_TB_INCIDENTE_VR_LATITUDE_01`    | Quando informada, latitude entre -90 e 90.                                          |
+| Validação de longitude        | `CC_TB_INCIDENTE_VR_LONGITUDE_01`   | Quando informada, longitude entre -180 e 180.                                       |
 
 As associativas e tabelas dependentes também deverão possuir suas chaves estrangeiras e índices por referência no detalhamento físico.
 
@@ -317,30 +359,84 @@ As associativas e tabelas dependentes também deverão possuir suas chaves estra
 - Sistema de referência espacial, ordem das coordenadas e regras de atualização do ponto geométrico.
 - Limites, formatos e armazenamento dos arquivos, política de exclusão ou desativação e estrutura de auditoria.
 
+## Tabela `TB_TICKET`
+
+Armazena tickets de acompanhamento de emissões e incidentes. Cada ticket pertence a um evento e pode estar associado a zero, uma ou várias emissões e, independentemente, a zero, um ou vários incidentes. Um mesmo ticket pode ter associações dos dois tipos; não é obrigatório vinculá-lo a pelo menos um registro.
+
+Os vínculos são mantidos em tabelas associativas, evitando uma coluna de emissão ou incidente no ticket e permitindo múltiplas referências sem valores nulos. Cada emissão ou incidente também pode estar associado a vários tickets, conforme a proposta NxN.
+
+| Campo                   | Tipo lógico    | Obrigatório                                                                                                                                                 | Descrição                                                                                                                                                                                                                        |
+| ----------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ID_TICKET`           | Inteiro         | Sim                                                                                                                                                          | Chave primária - TB_TICKET. Identificador gerado automaticamente.                                                                                                                                                                 |
+| `ID_EVENTO`           | Inteiro         | Sim                                                                                                                                                          | Chave estrangeira para `TB_EVENTO.ID_EVENTO`. Evento ao qual o ticket pertence.                                                                                                                                                  |
+| `ID_FISCAL`           | Inteiro         | Não, a confirmar (tem que ser no bridge)                                                                                                                    | Chave estrangeira para `TB_FISCAL.ID_FISCAL`. Mantido conforme o mapeamento anterior; confirmar se representa o fiscal criador ou um responsável principal, pois os fiscais atribuídos são registrados em tabela associativa. |
+| `CO_SITUACAO_TICKET`  | Código textual | Sim (retirar o sufixo)                                                                                                                                       | Situação atual do ticket. Deve referenciar domínio próprio; valores e transições precisam ser definidos.                                                                                                                     |
+| `CO_PRIORIDADE`       | Código textual | Sim                                                                                                                                                          | Prioridade do ticket. Deve referenciar domínio próprio; valores e códigos precisam ser confirmados.                                                                                                                             |
+| `TX_OBSERVACAO`       | Texto longo     | Não                                                                                                                                                         | Observações informadas na criação ou no acompanhamento do ticket.                                                                                                                                                              |
+| `TX_MOTIVO_DEVOLUCAO` | Texto longo     | Condicional (podem ocorrer N devoluções e providências, retirar esses campos e os colocar em tabelas auxiliares, cuidado com os padrões de nomenclatura) | Motivo obrigatório quando a coordenação devolver um ticket concluído pelo fiscal.                                                                                                                                              |
+| `DH_CRIACAO`          | Data e hora     | Sim                                                                                                                                                          | Momento de criação do ticket, preenchido automaticamente pela aplicação.                                                                                                                                                       |
+| `DH_ATUALIZACAO`      | Data e hora     | Não                                                                                                                                                         | Momento da última atualização do ticket, preenchido pela aplicação.                                                                                                                                                           |
+| `TX_PROVIDENCIA`      | Texto longo     | Não                                                                                                                                                         | Providências registradas para o ticket. Confirmar se o conteúdo pertence ao ticket ou a um histórico de ações separado.                                                                                                       |
+
+### Tabelas Associativas
+
+| Tabela                  | Campos e regras                                                                                                                                                                                                                                                                                   |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TB_TICKET_EMISSAO`   | `ID_TICKET_EMISSAO` como chave primária; `ID_TICKET` referenciando `TB_TICKET.ID_TICKET`; `ID_EMISSAO` referenciando `TB_EMISSAO.ID_EMISSAO`. Criar índice único para o par `ID_TICKET`/`ID_EMISSAO`.                                                                            |
+| `TB_TICKET_INCIDENTE` | `ID_TICKET_INCIDENTE` como chave primária; `ID_TICKET` referenciando `TB_TICKET.ID_TICKET`; `ID_INCIDENTE` referenciando `TB_INCIDENTE.ID_INCIDENTE`. Criar índice único para o par `ID_TICKET`/`ID_INCIDENTE`.                                                                  |
+| `TB_TICKET_FISCAL`    | `ID_TICKET_FISCAL` como chave primária; `ID_TICKET` referenciando `TB_TICKET.ID_TICKET`; `ID_FISCAL` referenciando `TB_FISCAL.ID_FISCAL`. Criar índice único para o par `ID_TICKET`/`ID_FISCAL`; confirmar se ao menos um fiscal deve ser atribuído. (verificar se necessário) |
+
+### Relacionamentos, Chaves e Índices
+
+- Um evento pode possuir vários tickets; cada ticket pertence a um evento por `ID_EVENTO`.
+- Um ticket pode estar associado a zero ou várias emissões por `TB_TICKET_EMISSAO`; uma emissão pode estar associada a zero ou vários tickets.
+- Um ticket pode estar associado a zero ou vários incidentes por `TB_TICKET_INCIDENTE`; um incidente pode estar associado a zero ou vários tickets.
+- As associações com emissões e incidentes são independentes. A inclusão de um tipo não exige nem impede a inclusão do outro.
+- As emissões e os incidentes associados devem pertencer ao mesmo evento do ticket. Validar essa consistência no salvamento, inclusive quando os vínculos forem alterados.
+- O vínculo opcional `ID_FISCAL` em `TB_TICKET` deve ter chave estrangeira `FK_TB_TICKET_TB_FISCAL`; `ID_EVENTO` deve ter `FK_TB_TICKET_TB_EVENTO`. Criar índices para as chaves estrangeiras.
+- Cada tabela associativa deve possuir chaves estrangeiras para suas duas entidades e índices para consulta por cada referência, além do índice único do par.
+- `CO_SITUACAO_TICKET` e `CO_PRIORIDADE` devem referenciar tabelas de domínio próprias, conforme a regra de modelagem para valores não binários. Definir nomes, códigos, valores iniciais e regras de transição antes do modelo físico.
+
+### Regras de Consistência e Auditoria
+
+- A ausência de vínculos com emissões e incidentes é válida; não exigir uma associação mínima para concluir ou salvar o ticket.
+- Ao devolver um ticket concluído pelo fiscal, exigir e persistir `TX_MOTIVO_DEVOLUCAO`, identificar o coordenador responsável e registrar na auditoria o estado anterior e o motivo informado.
+- Inclusões, edições, mudanças de situação, devoluções, alterações de prioridade e inclusões ou remoções de vínculos com emissões, incidentes e fiscais devem gerar auditoria com origem, registro afetado, usuário e valores anteriores e novos aplicáveis.
+- Alterações nos vínculos não podem excluir os registros de emissão ou incidente associados, nem outros vínculos do ticket.
+- A consulta de auditoria deve exibir corretamente as alterações do ticket e de suas associações; normalizar valores nulos, vazios e equivalentes antes de registrar diferenças.
+
+### Pontos a Confirmar
+
+- Valores e códigos dos domínios de situação e prioridade, incluindo estados permitidos e transições entre coordenação e fiscal.
+- Papel de `ID_FISCAL` no ticket em relação aos fiscais atribuídos em `TB_TICKET_FISCAL`; avaliar se o campo deve ser removido ou renomeado após essa definição.
+- Se a providência será um campo atual do ticket ou registros em uma tabela histórica própria.
+- Se a atribuição de pelo menos um fiscal será obrigatória e se um ticket pode ser criado sem emissão e sem incidente, além de permanecer sem vínculos posteriormente.
+- Como garantir, no banco e na aplicação, que emissão e incidente associados pertençam ao evento do ticket.
+
 ## Tabela `TB_TESTE_ETIQUETAGEM`
 
 Armazena o teste e a etiquetagem de um equipamento ou conjunto de equipamentos iguais, conforme a janela **Teste e etiquetagem**. Cada teste pertence a um evento e pode possuir várias frequências, adicionadas individualmente pelo botão `+` ao lado de Frequências. As frequências são registros dependentes, descritos na tabela `TB_TESTE_ETIQUETAGEM_FREQUENCIA`, e não uma coluna multivalorada do teste.
 
 Os tipos são lógicos. As obrigatoriedades sem indicação explícita na imagem e as regras de geração de etiquetas permanecem propostas a confirmar. Os campos do formulário são mantidos como dados do teste nesta etapa; avaliar um cadastro próprio da entidade se ela for reutilizada entre testes.
 
-| Campo | Tipo lógico | Obrigatório | Descrição |
-| --- | --- | --- | --- |
-| `ID_TESTE_ETIQUETAGEM` | Inteiro | Sim | Chave primária - TB_TESTE_ETIQUETAGEM. Identificador gerado automaticamente. |
-| `ID_EVENTO` | Inteiro | Sim | Chave primária - TB_EVENTO. Evento do teste, obtido do contexto da aplicação. |
-| `CO_PERFIL` | Código textual | Sim, proposto | Chave primária - TB_PERFIL_ENTIDADE. Opção escolhida entre Pessoa Física, Pessoa Jurídica e Estrangeiro. |
-| `CO_LICENCA` | Código textual | Sim, proposto | Chave primária - TB_LICENCA. Enquadramento selecionado entre usuário temporário de espectro (UTE), Outorgado, Não Outorgado e Radiação Restrita. |
-| `CO_TIPO_EQUIPAMENTO` | Código textual | Sim | Chave primária - TB_TIPO_EQUIPAMENTO. Tipo escolhido no seletor Tipo do equipamento. |
-| `CO_PERMISSAO` | Código textual | Sim, proposto | Chave primária - TB_PERMISSAO_ETIQUETA. Opção escolhida em Status da etiqueta. |
-| `CO_CPF_CNPJ` | Texto curto | Não na tela; validar condição | Cadastro de Pessoas Físicas (CPF) ou Cadastro Nacional da Pessoa Jurídica (CNPJ), conforme o perfil selecionado. Armazenar como texto, preservando zeros iniciais. |
-| `NO_ENTIDADE` | Texto curto | Sim | Nome da pessoa ou entidade à qual se refere o equipamento testado. |
-| `NO_RESPONSAVEL_CONTATO` | Texto curto | Não | Nome do responsável informado para contato. |
-| `CO_TELEFONE` | Texto curto | Não | Telefone de contato, incluindo código de país e de área quando informados. Não armazenar como número inteiro. |
-| `ED_EMAIL` | Texto curto | Não | Endereço de correio eletrônico para contato. |
-| `DE_LOCAL` | Texto curto | Sim | Local do evento ao qual o teste e a permissão se referem. Confirmar se o campo identifica uma localidade cadastrada. |
-| `IC_EQUIPAMENTO_HOMOLOGADO` | Booleano | Sim, proposto | Informa se o equipamento é homologado. Valores: 0 - Não; 1 - Sim. Corresponde à caixa Equipamento homologado. |
-| `QT_EQUIPAMENTO` | Inteiro | Sim | Quantidade de equipamentos iguais sendo etiquetados. A tela apresenta inicialmente 1. |
-| `TX_OBSERVACAO` | Texto longo | Não | Observações e características complementares do equipamento. |
-| `DH_CRIACAO` | Data e hora | Sim | Momento de criação do teste, preenchido automaticamente pela aplicação. |
+| Campo                         | Tipo lógico    | Obrigatório                                                              | Descrição                                                                                                                                                          |
+| ----------------------------- | --------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ID_TESTE_ETIQUETAGEM`      | Inteiro         | Sim                                                                       | Chave primária - TB_TESTE_ETIQUETAGEM. Identificador gerado automaticamente.                                                                                        |
+| `ID_EVENTO`                 | Inteiro         | Sim                                                                       | Chave primária - TB_EVENTO. Evento do teste, obtido do contexto da aplicação.                                                                                     |
+| `CO_PERFIL`                 | Código textual | Sim, proposto                                                             | Chave primária - TB_PERFIL_ENTIDADE. Opção escolhida entre Pessoa Física, Pessoa Jurídica e Estrangeiro.                                                        |
+| `CO_LICENCA`                | Código textual | Sim, proposto                                                             | Chave primária - TB_LICENCA. Enquadramento selecionado entre usuário temporário de espectro (UTE), Outorgado, Não Outorgado e Radiação Restrita.               |
+| `CO_TIPO_EQUIPAMENTO`       | Código textual | Sim                                                                       | Chave primária - TB_TIPO_EQUIPAMENTO. Tipo escolhido no seletor Tipo do equipamento.                                                                                |
+| `CO_PERMISSAO`              | Código textual | Sim, proposto                                                             | Chave primária - TB_PERMISSAO_ETIQUETA. Opção escolhida em Status da etiqueta.                                                                                    |
+| `CO_CPF_CNPJ`               | Texto curto     | Não na tela; validar condição                                          | Cadastro de Pessoas Físicas (CPF) ou Cadastro Nacional da Pessoa Jurídica (CNPJ), conforme o perfil selecionado. Armazenar como texto, preservando zeros iniciais. |
+| `NO_ENTIDADE`               | Texto curto     | Sim (criar uma tabela de entidades, nesta tabela ficar só o id_entidade) | Nome da pessoa ou entidade à qual se refere o equipamento testado.                                                                                                  |
+| `NO_RESPONSAVEL_CONTATO`    | Texto curto     | Não                                                                      | Nome do responsável informado para contato.                                                                                                                         |
+| `CO_TELEFONE`               | Texto curto     | Não                                                                      | Telefone de contato, incluindo código de país e de área quando informados. Não armazenar como número inteiro.                                                   |
+| `ED_EMAIL`                  | Texto curto     | Não                                                                      | Endereço de correio eletrônico para contato.                                                                                                                       |
+| `DE_LOCAL`                  | Texto curto     | Sim                                                                       | Local do evento ao qual o teste e a permissão se referem. Confirmar se o campo identifica uma localidade cadastrada.                                                |
+| `IC_EQUIPAMENTO_HOMOLOGADO` | Booleano        | Sim, proposto                                                             | Informa se o equipamento é homologado. Valores: 0 - Não; 1 - Sim. Corresponde à caixa Equipamento homologado.                                                     |
+| `QT_EQUIPAMENTO`            | Inteiro         | Sim                                                                       | Quantidade de equipamentos iguais sendo etiquetados. A tela apresenta inicialmente 1.                                                                                |
+| `TX_OBSERVACAO`             | Texto longo     | Não                                                                      | Observações e características complementares do equipamento.                                                                                                      |
+| `DH_CRIACAO`                | Data e hora     | Sim                                                                       | Momento de criação do teste, preenchido automaticamente pela aplicação.                                                                                          |
 
 O número inicial da etiqueta e o número final exibidos no formulário serão representados pelos registros individuais de `TB_TESTE_ETIQUETAGEM_ETIQUETA`, conforme a proposta abaixo. Não confundir a permissão da etiqueta com os estados de tratamento de emissões e incidentes.
 
@@ -348,29 +444,29 @@ O número inicial da etiqueta e o número final exibidos no formulário serão r
 
 Armazena cada frequência adicionada no popup **Adicionar frequência**, com sua banda e faixa. Um teste possui uma ou mais linhas nesta tabela; cada linha pertence a um único teste. Duas frequências adicionadas pelo botão `+` geram dois registros dependentes, e não duas colunas no teste.
 
-| Campo | Tipo lógico | Obrigatório | Descrição |
-| --- | --- | --- | --- |
-| `ID_TESTE_ETIQUETAGEM_FREQUENCIA` | Inteiro | Sim | Chave primária - TB_TESTE_ETIQUETAGEM_FREQUENCIA. Identificador gerado automaticamente. |
-| `ID_TESTE_ETIQUETAGEM` | Inteiro | Sim | Chave primária - TB_TESTE_ETIQUETAGEM. Identifica o teste ao qual a frequência pertence. |
-| `CO_BANDA` | Código textual | Sim, proposto | Chave primária - TB_BANDA. Banda selecionada para esta frequência; confirmar a unidade e os valores do seletor. |
-| `CO_FAIXA` | Código textual | Sim, proposto | Chave primária - TB_FAIXA. Faixa selecionada para esta frequência. |
-| `VR_FREQUENCIA_MHZ` | Decimal | Sim | Frequência central informada no popup, em megahertz (MHz). |
-| `DH_CRIACAO` | Data e hora | Sim | Momento de inclusão da frequência no teste, preenchido pela aplicação. |
+| Campo                               | Tipo lógico    | Obrigatório  | Descrição                                                                                                        |
+| ----------------------------------- | --------------- | ------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `ID_TESTE_ETIQUETAGEM_FREQUENCIA` | Inteiro         | Sim           | Chave primária - TB_TESTE_ETIQUETAGEM_FREQUENCIA. Identificador gerado automaticamente.                           |
+| `ID_TESTE_ETIQUETAGEM`            | Inteiro         | Sim           | Chave primária - TB_TESTE_ETIQUETAGEM. Identifica o teste ao qual a frequência pertence.                         |
+| `CO_BANDA`                        | Código textual | Sim, proposto | Chave primária - TB_BANDA. Banda selecionada para esta frequência; confirmar a unidade e os va lores do seletor. |
+| `CO_FAIXA`                        | Código textual | Sim, proposto | Chave primária - TB_FAIXA. Faixa selecionada para esta frequência.                                               |
+| `VR_FREQUENCIA_MHZ`               | Decimal         | Sim           | Frequência central informada no popup, em megahertz (MHz).                                                        |
+| `DH_CRIACAO`                      | Data e hora     | Sim           | Momento de inclusão da frequência no teste, preenchido pela aplicação.                                         |
 
 A banda pertence a cada frequência, não ao teste inteiro. Se o seletor Banda representar a largura de banda ocupada, `TB_BANDA` deverá disponibilizar seu valor decimal e unidade, por exemplo `VR_LARGURA_KHZ` em quilohertz (kHz), após confirmação. Não duplicar no registro dependente um valor já determinado exclusivamente pelo código da banda.
 
 ### Domínios e Relacionamentos Complementares
 
-| Objeto proposto | Finalidade e dados |
-| --- | --- |
-| `TB_PERFIL_ENTIDADE` | Domínio com chave `CO_PERFIL` e descrição `DE_PERFIL`. Representa as três opções de perfil exibidas. |
-| `TB_LICENCA` | Domínio com chave `CO_LICENCA` e descrição `DE_LICENCA`. Representa os quatro enquadramentos exibidos, não um número de licença individual. |
-| `TB_TIPO_EQUIPAMENTO` | Domínio com chave `CO_TIPO_EQUIPAMENTO` e descrição `DE_TIPO_EQUIPAMENTO`. Opções a confirmar. |
-| `TB_PERMISSAO_ETIQUETA` | Domínio com chave `CO_PERMISSAO` e descrição `DE_PERMISSAO`. Opções visíveis: Permitido em um local; Permitido em todos; Não permitido. Confirmar a redação e o alcance de todos os locais. |
-| `TB_BANDA` | Domínio com chave `CO_BANDA` e descrição `DE_BANDA`, além da largura e unidade caso esse seja o significado do seletor. Uma banda pode ser referenciada por várias frequências de testes. |
-| `TB_FAIXA` | Domínio com chave `CO_FAIXA` e descrição `DE_FAIXA`. Uma faixa pode ser referenciada por várias frequências de testes. |
+| Objeto proposto                   | Finalidade e dados                                                                                                                                                                                                                                                                                                                 |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TB_PERFIL_ENTIDADE`            | Domínio com chave `CO_PERFIL` e descrição `DE_PERFIL`. Representa as três opções de perfil exibidas.                                                                                                                                                                                                                     |
+| `TB_LICENCA`                    | Domínio com chave `CO_LICENCA` e descrição `DE_LICENCA`. Representa os quatro enquadramentos exibidos, não um número de licença individual.                                                                                                                                                                              |
+| `TB_TIPO_EQUIPAMENTO`           | Domínio com chave `CO_TIPO_EQUIPAMENTO` e descrição `DE_TIPO_EQUIPAMENTO`. Opções a confirmar.                                                                                                                                                                                                                            |
+| `TB_PERMISSAO_ETIQUETA`         | Domínio com chave `CO_PERMISSAO` e descrição `DE_PERMISSAO`. Opções visíveis: Permitido em um local; Permitido em todos; Não permitido. Confirmar a redação e o alcance de todos os locais.                                                                                                                           |
+| `TB_BANDA`                      | Domínio com chave `CO_BANDA` e descrição `DE_BANDA`, além da largura e unidade caso esse seja o significado do seletor. Uma banda pode ser referenciada por várias frequências de testes.                                                                                                                                |
+| `TB_FAIXA`                      | Domínio com chave `CO_FAIXA` e descrição `DE_FAIXA`. Uma faixa pode ser referenciada por várias frequências de testes.                                                                                                                                                                                                    |
 | `TB_TESTE_ETIQUETAGEM_ETIQUETA` | Registros individuais das etiquetas de um teste. Proposta: chave simples `ID_TESTE_ETIQUETAGEM_ETIQUETA`, referência `ID_TESTE_ETIQUETAGEM` e código textual `CO_ETIQUETA`, preservando zeros iniciais. A quantidade e o intervalo apresentados no formulário orientam a geração, cuja regra ainda deve ser confirmada. |
-| `TB_TESTE_ETIQUETAGEM_IMAGEM` | Fotos opcionais do equipamento. Chave `ID_TESTE_ETIQUETAGEM_IMAGEM`, referência `ID_TESTE_ETIQUETAGEM`, metadados e endereço do arquivo externo. Evitar conteúdo binário no banco, salvo exceção justificada. |
+| `TB_TESTE_ETIQUETAGEM_IMAGEM`   | Fotos opcionais do equipamento. Chave `ID_TESTE_ETIQUETAGEM_IMAGEM`, referência `ID_TESTE_ETIQUETAGEM`, metadados e endereço do arquivo externo. Evitar conteúdo binário no banco, salvo exceção justificada. (ANEXO)                                                                                                    |
 
 Os domínios devem ter códigos e descrições documentados e chaves sem autoincremento quando tiverem menos de 30 registros. Valores não binários são referências a tabelas de domínio, não listas em campos de texto nem enumerações em restrições `CHECK`.
 

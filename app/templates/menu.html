@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Login - AppEventos{% endblock %}
+
+{% block content %}
+<main class="login-page">
+	<header class="login-header">
+		<img class="login-brand" src="{{ url_for('static', path='Anatel.png') }}" alt="Anatel">
+		<h1>AppEventos</h1>
+		<p>Faça login para iniciar o trabalho no evento.</p>
+	</header>
+
+	<form class="login-form" aria-label="Login">
+		<div class="form-field">
+			<label for="evento">Evento</label>
+			<select id="evento" name="evento" disabled>
+				<option>Selecione...</option>
+			</select>
+		</div>
+
+		<div class="form-field">
+			<label for="usuario">Usuário</label>
+			<select id="usuario" name="usuario" aria-describedby="usuario-ajuda" disabled>
+				<option>Selecione um evento primeiro</option>
+			</select>
+			<small id="usuario-ajuda">Lista exibida com os fiscais vinculados ao evento.</small>
+		</div>
+
+		<div class="form-field">
+			<label for="senha">Senha</label>
+			<input id="senha" name="senha" type="password" autocomplete="current-password" disabled>
+		</div>
+
+		<div class="form-field">
+			<label for="perfil">Entrar como</label>
+			<select id="perfil" name="perfil" disabled>
+				<option>Selecione um usuário primeiro</option>
+			</select>
+		</div>
+
+		<div class="form-actions">
+			<span>Login ainda não configurado.</span>
+			<button type="button" disabled>Entrar</button>
+		</div>
+	</form>
+</main>
+{% endblock %}
