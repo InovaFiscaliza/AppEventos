@@ -1,0 +1,120 @@
+:root {
+	color-scheme: light;
+	--azul: #12355e;
+	--borda: #c9d9e8;
+	--texto: #142a40;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	color: var(--texto);
+	background: #fff;
+	font-family: Arial, sans-serif;
+}
+
+.login-page {
+	width: min(100% - 2rem, 525px);
+	margin: 0 auto;
+	padding: 2rem 0;
+}
+
+.login-header {
+	text-align: center;
+}
+
+.login-brand {
+	display: block;
+	width: 105px;
+	height: auto;
+	margin: 0 auto 0.75rem;
+}
+
+.login-header h1 {
+	margin: 0 0 0.35rem;
+	color: #005ac1;
+	font-size: 1.3rem;
+}
+
+.login-header > p:last-child {
+	margin: 0 0 1rem;
+}
+
+.login-form {
+	padding: 1.2rem;
+	border: 1px solid #d5e4ef;
+	border-radius: 12px;
+	background: #f2f8fc;
+	box-shadow: 0 2px 8px #00000018;
+}
+
+.form-field {
+	margin-bottom: 0.85rem;
+}
+
+.form-field label {
+	display: block;
+	margin-bottom: 0.3rem;
+	color: var(--azul);
+	font-size: 0.875rem;
+	font-weight: 700;
+}
+
+.form-field select,
+.form-field input {
+	display: block;
+	width: 100%;
+	height: 45px;
+	padding: 0 0.85rem;
+	border: 1px solid var(--borda);
+	border-radius: 9px;
+	background: #fff;
+	color: var(--texto);
+	font: inherit;
+	font-size: 0.875rem;
+}
+
+.form-field select:disabled {
+	background: #eef6fc;
+	color: #6b8198;
+	opacity: 1;
+}
+
+.form-field input:disabled {
+	opacity: 1;
+}
+
+.form-field small {
+	display: block;
+	margin-top: 0.35rem;
+	color: #567594;
+	font-size: 0.75rem;
+}
+
+.form-actions {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-top: 1.1rem;
+}
+
+.form-actions span {
+	color: #567594;
+	font-size: 0.75rem;
+}
+
+.form-actions button {
+	padding: 0.75rem 1rem;
+	border: 0;
+	border-radius: 9px;
+	background: var(--azul);
+	color: #fff;
+	font: inherit;
+	font-size: 0.875rem;
+	font-weight: 700;
+	opacity: 0.7;
+}
