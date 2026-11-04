@@ -4,3 +4,9 @@
   commit push e merge com main detalhado conforme o .vscode/settings.json 
 
   
+  # Comando para criar o container Postgres na porta 5433 
+  podman run -d --name appeventos-postgres -e POSTGRES_USER=appeventos -e POSTGRES_PASSWORD=appPasswd -e POSTGRES_DB=appeventos -p 5433:5432 -v appeventos-pgdata:/var/lib/postgresql/data --restart unless-stopped docker.io/library/postgres:16
+
+  # DATABASE_URL correspondente
+  $env:DATABASE_URL = "postgresql+psycopg://appeventos:appPasswd@localhost:5433/appeventos"
+
