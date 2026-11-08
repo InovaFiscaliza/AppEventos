@@ -13,9 +13,10 @@
 	<form class="login-form" aria-label="Login">
 		<div class="form-field">
 			<label for="evento">Evento</label>
-			<select id="evento" name="evento" disabled>
-				<option>Selecione...</option>
-			</select>
+		    <select id="evento" name="evento">
+			   <option value="">Selecione...</option>
+			   <option value="novo" data-url="{{ url_for('novo_evento') }}">+ Criar Evento</option>
+		    </select>
 		</div>
 
 		<div class="form-field">
