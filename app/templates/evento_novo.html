@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Criar Evento - AppEventos{% endblock %}
+
+{% block content %}
+<main class="login-page">
+	<header class="login-header">
+		<img class="login-brand" src="{{ url_for('static', path='Anatel.png') }}" alt="Anatel">
+		<h1>Criar Evento</h1>
+	</header>
+
+	<form class="login-form" method="post" action="{{ url_for('salvar_evento') }}" aria-label="Criar evento">
+		{% if erro %}
+		<p class="form-erro" role="alert">{{ erro }}</p>
+		{% endif %}
+
+		<div class="form-field">
+			<label for="nome">Nome do evento</label>
+			<input id="nome" name="nome" maxlength="200" value="{{ nome or '' }}" required>
+		</div>
+
+		<div class="form-field">
+			<label for="data_inicio">Início</label>
+			<input id="data_inicio" name="data_inicio" type="date" value="{{ data_inicio or '' }}">
+		</div>
+
+		<div class="form-field">
+			<label for="data_fim">Fim</label>
+			<input id="data_fim" name="data_fim" type="date" value="{{ data_fim or '' }}">
+		</div>
+
+		<div class="form-actions">
+			<a href="{{ url_for('menu') }}">Cancelar</a>
+			<button type="submit">Salvar</button>
+		</div>
+	</form>
+</main>
+{% endblock %}
