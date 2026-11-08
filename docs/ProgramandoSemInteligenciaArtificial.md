@@ -6,8 +6,9 @@ consulte a documentação das ferramentas e confira os resultados no navegador
 e nos testes.
 
 Este projeto é um esqueleto de aplicação. A página inicial apresenta uma tela
-de login, mas os campos estão desabilitados: ainda não há autenticação, banco
-de dados ou cadastro de eventos.
+de login ainda sem autenticação. O campo **Evento** já oferece a opção
+**+ Criar Evento**, que grava novos eventos no PostgreSQL. Os demais campos
+continuam desabilitados.
 
 ## Preparar o ambiente
 
@@ -18,6 +19,8 @@ de dados ou cadastro de eventos.
 3. Use o Explorador do VS Code para abrir os arquivos e o terminal integrado
    para executar os comandos deste guia. Execute os comandos na raiz do
    projeto, a pasta que contém `pyproject.toml`.
+4. Fora do VS Code, use o atalho **AppEventos - PowerShell** da Área de
+   Trabalho: ele abre o PowerShell já na raiz do projeto.
 
 O preenchimento de código do próprio editor e a documentação das linguagens
 podem continuar sendo usados sem gerar código por IA.
@@ -37,12 +40,34 @@ não cria automaticamente banco de dados, autenticação ou regras de negócio.
 ## Executar
 
 Instale o Python 3.13 ou superior e o [uv](https://docs.astral.sh/uv/).
+
+O cadastro de eventos precisa do PostgreSQL. Na primeira vez, crie o
+contêiner com o Podman (os mesmos comandos estão em `comandosbasicos`):
+
+```powershell
+podman run -d --name appeventos-postgres -e POSTGRES_USER=appeventos -e POSTGRES_PASSWORD=appPasswd -e POSTGRES_DB=appeventos -p 5433:5432 -v appeventos-pgdata:/var/lib/postgresql/data --restart unless-stopped docker.io/library/postgres:16
+```
+
+A aplicação lê o endereço do banco na variável `DATABASE_URL`. Sem ela, usa o
+endereço local acima (`app/services/db.py`). Para outro banco:
+
+```powershell
+$env:DATABASE_URL = "postgresql+psycopg://usuario:senha@servidor:porta/banco"
+```
+
+As tabelas são criadas pelas migrações em `local_server/migrations/`.
+
 Na pasta do projeto, execute:
 
 ```powershell
 uv sync
 uv run uvicorn app.main:app --reload
 ```
+
+O servidor é iniciado pelo `uvicorn` a partir da raiz, indicando o módulo
+`app.main` e o objeto `app`. Não execute `python main.py` dentro de `app/`
+nem `uv run main.py`: o arquivo apenas cria a aplicação e o Python não
+encontra o pacote `app` fora da raiz.
 
 Abra `http://127.0.0.1:8000`. Para parar o servidor, pressione `Ctrl+C`.
 Para executar o teste da página inicial:
@@ -55,13 +80,27 @@ uv run pytest
 
 - `app/main.py`: cria a aplicação e registra as rotas e os arquivos estáticos.
 - `app/routers/menu.py`: define a rota da página inicial.
+- `app/routers/evento.py`: rotas do formulário e da gravação de eventos.
+- `app/services/db.py`: conexão com o PostgreSQL (`engine` do SQLAlchemy).
 - `app/templates/base.html`: estrutura compartilhada das páginas.
 - `app/templates/menu.html`: conteúdo da página inicial.
+- `app/templates/evento_novo.html`: formulário de criação de evento.
 - `app/static/style.css`: estilos da interface.
 - `app/static/app.js`: JavaScript da interface.
 - `app/static/rf-fusion/`: local reservado aos recursos visuais originais.
 - `tests/`: testes automatizados.
+- `local_server/migrations/`: migrações SQL do banco.
 - `pyproject.toml`: dependências e configuração do projeto.
+
+Para criar uma nova tela, normalmente você altera:
+
+1. `app/routers/<tela>.py` (novo): rota da tela.
+2. `app/main.py`: registro do `router` com `app.include_router(...)`.
+3. `app/templates/<tela>.html` (novo): conteúdo da tela.
+4. `app/static/style.css` e a versão `?v=` em `base.html`, se houver estilo novo.
+5. `app/static/app.js`, se houver comportamento no navegador.
+6. `tests/test_<tela>.py` (novo): testes da rota.
+7. `local_server/migrations/`, se a tela exigir nova estrutura no banco.
 
 ## Ciclo de trabalho
 
@@ -144,9 +183,7 @@ Acrescente ao final de `app/static/style.css` as regras da página, por exemplo:
 Depois de alterar o CSS, incremente o número após `?v=` no endereço de
 `style.css` em `app/templates/base.html`, para que o navegador receba a versão
 atualizada. Comportamentos interativos podem ser acrescentados em
-`app/static/app.js`. Se o projeto passar a ter os arquivos de cache PWA
-`app/static/sw.js` e `app/static/sw-register.js`, atualize também suas versões
-ao alterar arquivos estáticos.
+`app/static/app.js`.
 
 O Pinegrow pode ajudar na edição visual de HTML e CSS, mas pode não montar
 templates Jinja2 herdados. Confira sempre a página pelo FastAPI. O inspetor do
@@ -187,10 +224,68 @@ Execute `uv run pytest` e confira a página também em uma tela de celular.
 Quando a página tiver formulários ou dados, acrescente testes para seus
 comportamentos e erros. Para uma nova dependência, use `uv add nome`.
 
+## Exemplo real: Criar Evento
+
+O cadastro de eventos segue os mesmos passos de uma tela, acrescentando um
+formulário e a gravação no banco.
+
+### Dependências
+
+```powershell
+uv add sqlalchemy "psycopg[binary]" python-multipart
+```
+
+`sqlalchemy` executa os comandos SQL, `psycopg` conecta ao PostgreSQL e
+`python-multipart` permite ao FastAPI ler formulários HTML.
+
+### Fluxo
+
+1. Em `menu.html`, o campo **Evento** tem a opção `+ Criar Evento` com o
+   atributo `data-url`, gerado por `url_for('novo_evento')`.
+2. Em `app.js`, o evento `change` do campo lê o `data-url` da opção escolhida
+   e leva o navegador até `/eventos/novo`.
+3. Em `evento.py`, a rota `GET /eventos/novo` exibe `evento_novo.html`.
+4. O formulário envia `nome`, `data_inicio` e `data_fim` por `POST` para a
+   mesma rota, que:
+   - remove espaços do nome e converte as datas; campo de data vazio vira
+     `None` (a função `converter_data`);
+   - valida o nome obrigatório e se o fim não é anterior ao início. Em caso de
+     erro, devolve o formulário com status 400, a mensagem e os valores
+     digitados;
+   - grava com `INSERT INTO TB_EVENTO` usando `text()` e parâmetros nomeados
+     (`:nome`), nunca concatenando valores no SQL;
+   - redireciona para `/` com status 303.
+5. `style.css` ganhou `.form-erro`, o link de `.form-actions` e o botão
+   habilitado; a versão do CSS em `base.html` passou para `v=5`.
+
+As datas chegam como texto (`str`) porque um campo `date` vazio envia `""`,
+que o FastAPI rejeitaria com erro 422 se o parâmetro fosse do tipo `date`.
+
+### Testes sem banco
+
+`tests/test_evento.py` substitui o `engine` real por uma classe falsa com
+`monkeypatch.setattr(evento, "engine", ...)`. Assim os testes conferem os
+valores enviados ao banco sem precisar do PostgreSQL em execução. Os testes
+cobrem a opção no menu, o formulário, a gravação válida e os dados inválidos.
+
+### Pendências
+
+- Auditoria da criação: falta uma nova migração (`0002_...sql`) com a tabela
+  de log de eventos; não edite a `0001_novobd.sql`.
+- O campo **Evento** ainda não lista os eventos gravados; isso exige um
+  `SELECT ID_EVENTO, NO_EVENTO FROM TB_EVENTO` na rota `menu`.
+
 ## Entender e corrigir erros
 
 - **A página não abre:** confira se o servidor está em execução, se o endereço
   e a porta estão corretos e leia as mensagens no terminal do servidor.
+- **`ModuleNotFoundError: No module named 'app'`:** o servidor foi iniciado
+  fora da raiz. Volte com `cd ..` e use `uv run uvicorn app.main:app --reload`.
+- **`Failed to spawn: main.py`:** `uv run` recebeu um arquivo inexistente na
+  raiz. Use o comando do `uvicorn` acima.
+- **Erro ao salvar evento:** confira se o contêiner do PostgreSQL está ativo
+  (`podman ps`), se `DATABASE_URL` aponta para ele e se as migrações foram
+  aplicadas.
 - **A rota retorna 404:** verifique o endereço no navegador, o `@router.get`
   e se o `router` do arquivo foi registrado em `app/main.py`.
 - **O template não é encontrado:** confira o nome passado a
@@ -213,8 +308,9 @@ autenticação pronta. Ao implementar acesso, consulte a documentação de
 segurança do FastAPI, use conexões protegidas e armazenamento seguro de senhas,
 sem registrar senhas ou informações sensíveis em logs ou testes.
 
-Para futuras operações de inclusão, edição e exclusão, defina validação e
-tratamento de erros no backend e planeje a auditoria das alterações. Mudanças
+Para operações de inclusão, edição e exclusão, defina validação e
+tratamento de erros no backend e planeje a auditoria das alterações, como no
+cadastro de eventos. Mudanças
 no banco devem preservar os dados existentes e seguir as orientações de
 migração do projeto; não execute o esquema legado de implantação para atualizar
 um banco existente.
@@ -234,5 +330,9 @@ um banco existente.
 - [Documentação do Git](https://git-scm.com/doc): histórico e revisão de
   alterações.
 
-Os recursos RF.Fusion não foram fornecidos. Não há conexão com PostgreSQL,
-autenticação ou funcionamento offline implementados neste esqueleto.
+- [Documentação do SQLAlchemy](https://docs.sqlalchemy.org/): conexões e
+  execução de SQL com `text()`.
+
+Os recursos RF.Fusion não foram fornecidos. A conexão com PostgreSQL é usada
+apenas no cadastro de eventos; autenticação e funcionamento offline não estão
+implementados.

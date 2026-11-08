@@ -10,3 +10,6 @@
   # DATABASE_URL correspondente
   $env:DATABASE_URL = "postgresql+psycopg://appeventos:appPasswd@localhost:5433/appeventos"
 
+# rodar a aplicação 
+
+uv run uvicorn app.main:app --reload
