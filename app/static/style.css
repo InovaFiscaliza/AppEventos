@@ -139,3 +139,237 @@ body {
 	color: #8a1f1f;
 	font-size: 0.875rem;
 }
+
+.table-scroll {
+	margin-bottom: 1rem;
+	overflow-x: auto;
+}
+
+.ute-table {
+	width: 100%;
+	border-collapse: collapse;
+	background: #fff;
+	font-size: 0.85rem;
+}
+
+.ute-table th,
+.ute-table td {
+	padding: 0.5rem 0.75rem;
+	border-bottom: 1px solid var(--borda);
+	text-align: left;
+	font-weight: normal;
+}
+
+.ute-table th {
+	color: var(--azul);
+	font-weight: 700;
+}
+
+/* Telas internas: topo, trilha, etapa e painéis no padrão do Novo Registro. */
+.app-topo {
+	display: flex;
+	align-items: center;
+	min-height: 64px;
+	padding: 0 1rem;
+	border-top: 4px solid #1b2a3a;
+	background: #0b5aa2;
+}
+
+.app-marca {
+	color: #fff;
+	font-size: 1.6rem;
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.app-trilha {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	padding: 0.6rem 1.25rem;
+	background: #fff;
+	box-shadow: 0 2px 4px #00000014;
+	font-size: 0.95rem;
+}
+
+.app-trilha ol {
+	display: flex;
+	flex-wrap: wrap;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.app-trilha li + li::before {
+	content: "›";
+	margin: 0 0.6rem;
+	color: #8a9bb0;
+}
+
+.app-trilha a,
+.app-trilha li {
+	color: #4a5b6d;
+	text-decoration: none;
+}
+
+.app-trilha [aria-current="page"] {
+	color: var(--azul);
+}
+
+.app-pagina {
+	padding: 1.75rem 1.25rem 2rem;
+}
+
+.etapa {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	margin-bottom: 1rem;
+}
+
+.etapa-numero {
+	display: grid;
+	flex: none;
+	place-items: center;
+	width: 30px;
+	height: 30px;
+	border-radius: 50%;
+	background: #0b5aa2;
+	color: #fff;
+	font-size: 0.85rem;
+	font-weight: 700;
+}
+
+.etapa h1 {
+	margin: 0;
+	color: var(--azul);
+	font-size: 1rem;
+}
+
+.etapa p {
+	margin: 0.15rem 0 0;
+	font-size: 0.75rem;
+}
+
+.paineis {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 0.6rem;
+}
+
+.painel {
+	border: 1px solid #d5e4ef;
+	border-radius: 6px;
+	background: #fff;
+}
+
+.painel-titulo {
+	margin: 0;
+	padding: 0.6rem 0.75rem;
+	border-bottom: 1px solid #e3edf5;
+	background: #f6f9fc;
+	color: var(--azul);
+	font-size: 0.8rem;
+}
+
+.painel-titulo small,
+.painel-nota {
+	color: #567594;
+	font-size: 0.7rem;
+	font-weight: normal;
+}
+
+.painel-corpo {
+	padding: 0.75rem;
+}
+
+.painel .form-field label {
+	font-size: 0.7rem;
+}
+
+.painel .form-field input,
+.painel .form-field select {
+	height: 40px;
+	border-radius: 4px;
+}
+
+.papeis {
+	min-width: 0;
+	margin: 0 0 0.85rem;
+	padding: 0;
+	border: 0;
+}
+
+.papeis legend {
+	margin-bottom: 0.3rem;
+	padding: 0;
+	color: var(--azul);
+	font-size: 0.7rem;
+	font-weight: 700;
+}
+
+.painel .papeis label {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	margin-bottom: 0.25rem;
+	font-size: 0.8rem;
+	cursor: pointer;
+}
+
+.painel .form-field.papeis input[type="checkbox"] {
+	width: 16px;
+	height: 16px;
+	margin: 0;
+	padding: 0;
+}
+
+.obrigatorio {
+	color: #c62828;
+}
+
+.acoes-pagina {
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.5rem;
+	margin-top: 1.5rem;
+}
+
+.btn-primario,
+.btn-secundario {
+	min-width: 98px;
+	padding: 0.6rem 1rem;
+	border: 1px solid #0b5aa2;
+	border-radius: 6px;
+	font: inherit;
+	font-size: 0.8rem;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.btn-primario {
+	background: #0b5aa2;
+	color: #fff;
+}
+
+.btn-secundario {
+	background: #fff;
+	color: var(--azul);
+}
+
+.btn-primario:focus-visible,
+.btn-secundario:focus-visible {
+	outline: 2px solid #0b5aa2;
+	outline-offset: 2px;
+}
+
+.form-sucesso {
+	margin: 0 0 1rem;
+	padding: 0.75rem 1rem;
+	border: 1px solid #9fd3ad;
+	border-radius: 9px;
+	background: #edf9f0;
+	color: #1d5e2e;
+	font-size: 0.875rem;
+}

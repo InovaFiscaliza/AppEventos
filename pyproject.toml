@@ -5,6 +5,8 @@ description = "Aplicacao de apoio a grandes eventos"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.115,<1",
+    # Exigido pelo SessionMiddleware para assinar o cookie de sessão.
+    "itsdangerous>=2.2.0",
     "jinja2>=3.1,<4",
     "psycopg[binary]>=3.3.8",
     "python-multipart>=0.0.33",
