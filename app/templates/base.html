@@ -4,7 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}AppGrandesEventos{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}?v=5">
+    {# Aumente ?v= ao alterar style.css para o navegador baixar a versão nova. #}
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}?v=8">
     <script src="{{ url_for('static', path='app.js') }}" defer></script>
 </head>
 <body>

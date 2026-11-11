@@ -10,7 +10,11 @@
 		<p>Faça login para iniciar o trabalho no evento.</p>
 	</header>
 
-	<form class="login-form" aria-label="Login">
+	<form class="login-form" method="post" action="{{ url_for('entrar') }}" aria-label="Login">
+		{% if erro %}
+		<p class="form-erro" role="alert">{{ erro }}</p>
+		{% endif %}
+
 		<div class="form-field">
 			<label for="evento">Evento</label>
 		    <select id="evento" name="evento">
@@ -21,10 +25,17 @@
 
 		<div class="form-field">
 			<label for="usuario">Usuário</label>
-			<select id="usuario" name="usuario" aria-describedby="usuario-ajuda" disabled>
-				<option>Selecione um evento primeiro</option>
+			<select id="usuario" name="usuario" aria-describedby="usuario-ajuda">
+				<option value="">Selecione...</option>
+				{% for usuario in usuarios %}
+				<option value="{{ usuario.nome }}">{{ usuario.nome }} ({{ usuario.unidade }})</option>
+				{% endfor %}
+				{# Só vem preenchido enquanto não há usuários; data-login habilita a senha no app.js. #}
+				{% if usuario_cadastro %}
+				<option value="{{ usuario_cadastro }}" data-login="liberado">{{ usuario_cadastro }}</option>
+				{% endif %}
 			</select>
-			<small id="usuario-ajuda">Lista exibida com os fiscais vinculados ao evento.</small>
+			<small id="usuario-ajuda">Usuários cadastrados, ainda sem vínculo com o evento.</small>
 		</div>
 
 		<div class="form-field">
@@ -41,7 +52,8 @@
 
 		<div class="form-actions">
 			<span>Login ainda não configurado.</span>
-			<button type="button" disabled>Entrar</button>
+			{# Habilitado pelo app.js somente para "Cadastrar Usuário". #}
+			<button id="entrar" type="submit" disabled>Entrar</button>
 		</div>
 	</form>
 </main>

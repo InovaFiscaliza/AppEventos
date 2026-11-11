@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Cadastro de Usuários - AppEventos{% endblock %}
+
+{% block content %}
+{# Topo, trilha e painéis seguem o layout da tela Novo Registro. #}
+<header class="app-topo">
+	<a class="app-marca" href="{{ url_for('usuarios') }}">📡 App Eventos</a>
+</header>
+
+<nav class="app-trilha" aria-label="Navegação">
+	<ol>
+		<li><a href="{{ url_for('menu') }}">Início</a></li>
+		<li>Cadastro</li>
+		<li aria-current="page">Novo Usuário</li>
+	</ol>
+	<a href="{{ url_for('sair') }}">Sair</a>
+</nav>
+
+<main class="app-pagina">
+	<div class="etapa">
+		<span class="etapa-numero">1</span>
+		<div>
+			<h1>Dados do usuário</h1>
+			<p>Informe os dados do usuário que deseja cadastrar.</p>
+		</div>
+	</div>
+
+	{% if sucesso %}
+	<p class="form-sucesso" role="status">{{ sucesso }}</p>
+	{% endif %}
+	{% if erro %}
+	<p class="form-erro" role="alert">{{ erro }}</p>
+	{% endif %}
+
+	<form method="post" action="{{ url_for('salvar_usuario') }}" aria-label="Cadastrar usuário">
+		<div class="paineis">
+			<section class="painel" aria-labelledby="painel-identificacao">
+				<h2 class="painel-titulo" id="painel-identificacao">👤 Identificação</h2>
+				<div class="painel-corpo">
+					<div class="form-field">
+						<label for="nome">Nome <span class="obrigatorio">*</span></label>
+						<input id="nome" name="nome" maxlength="200" placeholder="Ex.: Maria Silva" value="{{ nome or '' }}" required>
+					</div>
+
+					<div class="form-field">
+						<label for="unidade">Unidade executante <span class="obrigatorio">*</span></label>
+						<select id="unidade" name="unidade" required>
+							<option value="">Selecione a unidade</option>
+							{% for item in unidades %}
+							<option value="{{ item.sigla }}" {% if item.sigla == unidade %}selected{% endif %}>{{ item.sigla }} - {{ item.nome }}</option>
+							{% endfor %}
+						</select>
+					</div>
+
+					<fieldset class="form-field papeis">
+						<legend>Papéis permitidos</legend>
+						{% for chave, rotulo in papeis.items() %}
+						<label>
+							<input type="checkbox" name="papeis" value="{{ chave }}" {% if chave in (papeis_marcados or ()) %}checked{% endif %}>
+							{{ rotulo }}
+						</label>
+						{% endfor %}
+					</fieldset>
+				</div>
+			</section>
+
+			<section class="painel" aria-labelledby="painel-lista">
+				<h2 class="painel-titulo" id="painel-lista">📋 Usuários cadastrados</h2>
+				<div class="painel-corpo">
+					<div class="table-scroll">
+						<table class="ute-table">
+							<thead>
+								<tr>
+									<th scope="col">Nome</th>
+									<th scope="col">Unidade executante</th>
+									<th scope="col">Papéis permitidos</th>
+								</tr>
+							</thead>
+							<tbody>
+								{% for usuario in usuarios %}
+								<tr>
+									<td>{{ usuario.nome }}</td>
+									<td>{{ usuario.unidade }}</td>
+									<td>{% for chave, rotulo in papeis.items() if usuario[chave] %}{{ rotulo }}{% if not loop.last %}, {% endif %}{% else %}—{% endfor %}</td>
+								</tr>
+								{% else %}
+								<tr>
+									<td colspan="3">Nenhum usuário cadastrado.</td>
+								</tr>
+								{% endfor %}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</section>
+		</div>
+
+		<div class="acoes-pagina">
+			{# reset volta aos valores do carregamento, sem ir ao servidor. #}
+			<button class="btn-secundario" type="reset">Limpar</button>
+			<button class="btn-primario" type="submit">Salvar →</button>
+		</div>
+	</form>
+</main>
+{% endblock %}
