@@ -8,12 +8,14 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
 
+from app.config import URL_ACESSO_ANATEL
 from app.services.db import engine
 
 router = APIRouter(prefix="/eventos")
 templates = Jinja2Templates(
     directory=Path(__file__).resolve().parent.parent / "templates"
 )
+templates.env.globals["url_acesso_anatel"] = URL_ACESSO_ANATEL
 
 
 @router.get("/novo", response_class=HTMLResponse, name="novo_evento")

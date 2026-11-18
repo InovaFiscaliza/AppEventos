@@ -6,13 +6,14 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from app.config import PAPEIS_USUARIO, USUARIO_CADASTRO
+from app.config import PAPEIS_USUARIO, URL_ACESSO_ANATEL, USUARIO_CADASTRO
 from app.services import usuarios as servico_usuarios
 
 router = APIRouter(prefix="/usuarios")
 templates = Jinja2Templates(
     directory=Path(__file__).resolve().parent.parent / "templates"
 )
+templates.env.globals["url_acesso_anatel"] = URL_ACESSO_ANATEL
 
 
 def cadastro_liberado(request: Request) -> bool:
@@ -41,7 +42,7 @@ def renderizar_cadastro(
 async def usuarios(request: Request) -> HTMLResponse | RedirectResponse:
     """Exibe a lista de usuários e o formulário de inclusão."""
     if not cadastro_liberado(request):
-        return RedirectResponse(url=request.url_for("menu"), status_code=303)
+        return RedirectResponse(url=request.url_for("login"), status_code=303)
     return renderizar_cadastro(
         request, sucesso=request.session.pop("flash_success", None)
     )
@@ -57,7 +58,7 @@ async def salvar_usuario(
     """Inclui o usuário e volta para a lista."""
     # O POST também é protegido: sem isso bastaria enviar o formulário direto.
     if not cadastro_liberado(request):
-        return RedirectResponse(url=request.url_for("menu"), status_code=303)
+        return RedirectResponse(url=request.url_for("login"), status_code=303)
 
     nome = nome.strip()
     unidade = unidade.strip()

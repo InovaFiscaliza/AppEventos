@@ -6,6 +6,11 @@ import secrets
 # Chave do cookie de sessão; sem a variável, as sessões expiram ao reiniciar o servidor.
 SESSION_SECRET = os.environ.get("SESSION_SECRET") or secrets.token_hex(32)
 
+# Dados do usuário logado na Anatel, consultados pelo navegador; vazio desativa.
+URL_ACESSO_ANATEL = os.environ.get(
+    "URL_ACESSO_ANATEL", "https://fiscalizacao.anatel.gov.br/rffusion/api/users/me"
+)
+
 # Usuário administrativo que libera a tela de cadastro (ver docs/usuarios-de-acesso.md).
 USUARIO_CADASTRO = "Cadastrar Usuário"
 # SHA-256 da senha documentada, para não manter a senha em texto no código.

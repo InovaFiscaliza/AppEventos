@@ -79,11 +79,11 @@ uv run pytest
 ## Onde alterar
 
 - `app/main.py`: cria a aplicação e registra as rotas e os arquivos estáticos.
-- `app/routers/menu.py`: define a rota da página inicial.
+- `app/routers/login.py`: define a rota da página inicial.
 - `app/routers/evento.py`: rotas do formulário e da gravação de eventos.
 - `app/services/db.py`: conexão com o PostgreSQL (`engine` do SQLAlchemy).
 - `app/templates/base.html`: estrutura compartilhada das páginas.
-- `app/templates/menu.html`: conteúdo da página inicial.
+- `app/templates/login.html`: conteúdo da página inicial.
 - `app/templates/evento_novo.html`: formulário de criação de evento.
 - `app/static/style.css`: estilos da interface.
 - `app/static/app.js`: JavaScript da interface.
@@ -118,9 +118,9 @@ Para criar uma nova tela, normalmente você altera:
    não adicionados ao Git aparecem no status, mas não no `git diff` comum;
    abra-os no editor para revisá-los.
 
-Comece alterando um texto existente em `app/templates/menu.html`, confira o
+Comece alterando um texto existente em `app/templates/login.html`, confira o
 resultado em `/` e depois ajuste os testes correspondentes em
-`tests/test_menu.py` quando o comportamento esperado mudar. Esse exercício
+`tests/test_login.py` quando o comportamento esperado mudar. Esse exercício
 ajuda a conhecer o fluxo sem precisar criar um módulo inteiro.
 
 ## Criar uma tela
@@ -132,7 +132,7 @@ automaticamente.
 
 ### 1. Criar a rota
 
-Abra `app/routers/menu.py` e acrescente ao final do arquivo:
+Abra `app/routers/login.py` e acrescente ao final do arquivo:
 
 ```python
 @router.get("/exemplo", response_class=HTMLResponse)
@@ -141,7 +141,7 @@ async def exemplo(request: Request) -> HTMLResponse:
 	return templates.TemplateResponse(request=request, name="exemplo.html")
 ```
 
-O endereço `/exemplo` identifica a página no navegador. O arquivo `menu.py` já
+O endereço `/exemplo` identifica a página no navegador. O arquivo `login.py` já
 possui os imports, o `router` e `templates` usados pelo exemplo; não é necessário
 copiá-los novamente. Ele também já está registrado em `app/main.py`. Ao criar
 um arquivo de rotas separado, importe-o e registre seu `router` em
@@ -240,7 +240,7 @@ uv add sqlalchemy "psycopg[binary]" python-multipart
 
 ### Fluxo
 
-1. Em `menu.html`, o campo **Evento** tem a opção `+ Criar Evento` com o
+1. Em `login.html`, o campo **Evento** tem a opção `+ Criar Evento` com o
    atributo `data-url`, gerado por `url_for('novo_evento')`.
 2. Em `app.js`, o evento `change` do campo lê o `data-url` da opção escolhida
    e leva o navegador até `/eventos/novo`.
@@ -266,14 +266,14 @@ que o FastAPI rejeitaria com erro 422 se o parâmetro fosse do tipo `date`.
 `tests/test_evento.py` substitui o `engine` real por uma classe falsa com
 `monkeypatch.setattr(evento, "engine", ...)`. Assim os testes conferem os
 valores enviados ao banco sem precisar do PostgreSQL em execução. Os testes
-cobrem a opção no menu, o formulário, a gravação válida e os dados inválidos.
+cobrem a opção na tela de login, o formulário, a gravação válida e os dados inválidos.
 
 ### Pendências
 
 - Auditoria da criação: falta uma nova migração (`0002_...sql`) com a tabela
   de log de eventos; não edite a `0001_novobd.sql`.
 - O campo **Evento** ainda não lista os eventos gravados; isso exige um
-  `SELECT ID_EVENTO, NO_EVENTO FROM TB_EVENTO` na rota `menu`.
+  `SELECT ID_EVENTO, NO_EVENTO FROM TB_EVENTO` na rota `login`.
 
 ## Entender e corrigir erros
 
@@ -295,7 +295,7 @@ cobrem a opção no menu, o formulário, a gravação válida e os dados inváli
   elemento e se outra regra a substitui.
 - **Um teste falhou:** leia o nome do teste, a primeira mensagem de erro e a
   linha indicada. Execute apenas esse arquivo, por exemplo
-  `uv run pytest tests/test_menu.py -q`, corrija o problema e execute
+  `uv run pytest tests/test_login.py -q`, corrija o problema e execute
   `uv run pytest` novamente.
 
 Faça uma alteração por vez e repita a verificação. Evite apagar dados ou
