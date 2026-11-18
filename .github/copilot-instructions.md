@@ -26,8 +26,8 @@ AppGrandesEventos é um sistema de monitoração de espectro eletromagnético pa
 app/
     __init__.py
     config.py              # Constantes e configurações centralizadas
-    routers/               # Rotas FastAPI (menu, consultar, inserir, bsr_erb, etc.)
-        menu.py            #   Rota principal /menu
+    routers/               # Rotas FastAPI (login, consultar, inserir, bsr_erb, etc.)
+        login.py           #   Rota principal / (login)
         consultar.py       #   Rota /consultar
         inserir.py         #   Rota /inserir
         bsr_erb.py         #   Rota /bsr_erb

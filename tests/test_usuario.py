@@ -19,27 +19,27 @@ def client() -> TestClient:
     return cliente
 
 
-def test_menu_sem_usuarios_oferece_cadastrar_usuario() -> None:
+def test_login_sem_usuarios_oferece_cadastrar_usuario() -> None:
     """Sem nenhum usuário, o login deve oferecer "Cadastrar Usuário"."""
     response = TestClient(app).get("/")
 
     assert ">Cadastrar Usuário</option>" in response.text
 
 
-def test_menu_com_usuarios_oculta_cadastrar_usuario(
+def test_login_com_usuarios_oculta_cadastrar_usuario(
     lista_isolada: list[dict[str, str]],
 ) -> None:
     """Com usuário cadastrado, a opção some e o login dela é recusado."""
     lista_isolada.append({"nome": "Fiscal Teste 1", "unidade": "GR01"})
     cliente = TestClient(app)
 
-    menu = cliente.get("/")
+    pagina_login = cliente.get("/")
     login = cliente.post(
         "/entrar", data={"usuario": "Cadastrar Usuário", "senha": "5000"}
     )
 
-    assert "Fiscal Teste 1 (GR01)" in menu.text
-    assert "Cadastrar Usuário" not in menu.text
+    assert "Fiscal Teste 1 (GR01)" in pagina_login.text
+    assert "Cadastrar Usuário" not in pagina_login.text
     assert login.status_code == 400
     assert cliente.get("/usuarios", follow_redirects=False).status_code == 303
 

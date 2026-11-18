@@ -16,6 +16,64 @@ body {
 	font-family: Arial, sans-serif;
 }
 
+.usuario-anatel {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.6rem;
+	padding: 0.5rem 1rem;
+	background: var(--azul);
+	color: #fff;
+	font-size: 0.85rem;
+}
+
+.usuario-anatel[hidden] {
+	display: none;
+}
+
+.usuario-anatel > span:not(.avatar) {
+	display: flex;
+	flex-direction: column;
+	text-align: right;
+}
+
+.usuario-anatel small {
+	opacity: 0.85;
+}
+
+.usuario-anatel .avatar {
+	width: 32px;
+	height: 32px;
+	background: #fff;
+	color: var(--azul);
+}
+
+/* Foto do usuário ou, sem foto, as iniciais do nome. */
+.avatar {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	overflow: hidden;
+	border-radius: 50%;
+	background: var(--azul);
+	color: #fff;
+	font-size: 0.8rem;
+	font-weight: 700;
+}
+
+.avatar img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.avatar [hidden] {
+	display: none;
+}
+
 .login-page {
 	width: min(100% - 2rem, 525px);
 	margin: 0 auto;
@@ -41,6 +99,26 @@ body {
 
 .login-header > p:last-child {
 	margin: 0 0 1rem;
+}
+
+.usuario-anatel-login {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	margin: 0 0 0.35rem;
+	color: var(--azul);
+	font-size: 0.85rem;
+}
+
+.usuario-anatel-login[hidden] {
+	display: none;
+}
+
+.usuario-anatel-ausente {
+	margin: 0 0 0.35rem;
+	color: #567594;
+	font-size: 0.8rem;
 }
 
 .login-form {

@@ -6,22 +6,23 @@ from fastapi import APIRouter, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
-from app.config import USUARIO_CADASTRO
+from app.config import URL_ACESSO_ANATEL, USUARIO_CADASTRO
 from app.services import usuarios as servico_usuarios
 
 router = APIRouter()
 templates = Jinja2Templates(
     directory=Path(__file__).resolve().parent.parent / "templates"
 )
+templates.env.globals["url_acesso_anatel"] = URL_ACESSO_ANATEL
 
 
-def renderizar_menu(
+def renderizar_login(
     request: Request, erro: str | None = None, status_code: int = 200
 ) -> HTMLResponse:
     """Monta a tela de login com a lista de usuários."""
     return templates.TemplateResponse(
         request=request,
-        name="menu.html",
+        name="login.html",
         context={
             "usuarios": servico_usuarios.listar_usuarios(),
             # "Cadastrar Usuário" só aparece enquanto não houver nenhum usuário.
@@ -34,10 +35,11 @@ def renderizar_menu(
     )
 
 
+# Liga a tela de login ao caminho "/" (registrado em app/main.py, linha 19).
 @router.get("/", response_class=HTMLResponse)
-async def menu(request: Request) -> HTMLResponse:
+async def login(request: Request) -> HTMLResponse:
     """Exibe a pagina inicial."""
-    return renderizar_menu(request)
+    return renderizar_login(request)
 
 
 @router.post("/entrar", name="entrar", response_model=None)
@@ -49,9 +51,9 @@ async def entrar(
     """Libera a tela de cadastro para o usuário administrativo."""
     # Com usuário cadastrado a opção some da tela, então o login dela também é recusado.
     if usuario != USUARIO_CADASTRO or servico_usuarios.existe_usuario():
-        return renderizar_menu(request, "Login ainda não configurado.", 400)
+        return renderizar_login(request, "Login ainda não configurado.", 400)
     if not servico_usuarios.senha_cadastro_confere(senha):
-        return renderizar_menu(request, "Senha inválida.", 401)
+        return renderizar_login(request, "Senha inválida.", 401)
 
     # Esta chave é o que cadastro_liberado() confere em /usuarios.
     request.session["usuario"] = USUARIO_CADASTRO
@@ -62,4 +64,4 @@ async def entrar(
 async def sair(request: Request) -> RedirectResponse:
     """Encerra a sessão e volta ao login."""
     request.session.clear()
-    return RedirectResponse(url=request.url_for("menu"), status_code=303)
+    return RedirectResponse(url=request.url_for("login"), status_code=303)

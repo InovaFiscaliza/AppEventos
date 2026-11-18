@@ -44,7 +44,7 @@ def engine_falsa(monkeypatch: pytest.MonkeyPatch) -> EngineFalsa:
     return engine
 
 
-def test_menu_oferece_criar_evento(client: TestClient) -> None:
+def test_login_oferece_criar_evento(client: TestClient) -> None:
     """O seletor de evento deve levar ao formulário de criação."""
     response = client.get("/")
 

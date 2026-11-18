@@ -5,10 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}AppGrandesEventos{% endblock %}</title>
     {# Aumente ?v= ao alterar style.css para o navegador baixar a versão nova. #}
-    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}?v=8">
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}?v=12">
     <script src="{{ url_for('static', path='app.js') }}" defer></script>
 </head>
-<body>
+<body data-url-usuario-anatel="{{ url_acesso_anatel }}">
+    {# Preenchido pelo app.js com os dados do RF Fusion; continua oculto se a consulta falhar. #}
+    {% block usuario_anatel %}
+    <div id="usuario-anatel" class="usuario-anatel" hidden>
+        <span id="usuario-anatel-foto" class="avatar">
+            <img alt="" hidden>
+            <span hidden></span>
+        </span>
+        <span>
+            <strong id="usuario-anatel-nome"></strong>
+            <small id="usuario-anatel-detalhe"></small>
+        </span>
+    </div>
+    {% endblock %}
     {% block content %}{% endblock %}
 </body>
 </html>
