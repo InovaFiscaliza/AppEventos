@@ -1,0 +1,31 @@
+FROM docker.io/library/debian:12-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/opt/appeventos/venv/bin:${PATH}" \
+    PYTHONPATH=/opt/appeventos \
+    APP_MODULE=bootstrap:app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        python3 python3-venv nginx-light openssh-server tini ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && python3 -m venv /opt/appeventos/venv \
+    && mkdir -p /run/sshd /appEventos \
+    && rm -f /etc/nginx/sites-enabled/default
+
+COPY requirements.txt /opt/appeventos/requirements.txt
+RUN python -m pip install --no-cache-dir --timeout 120 --retries 5 \
+    -r /opt/appeventos/requirements.txt
+
+COPY bootstrap.py /opt/appeventos/bootstrap.py
+COPY nginx-appeventos.conf /etc/nginx/conf.d/appeventos.conf
+COPY docker-entrypoint.sh /usr/local/bin/appeventos-entrypoint.sh
+RUN chmod 755 /usr/local/bin/appeventos-entrypoint.sh \
+    && nginx -t
+
+WORKDIR /appEventos
+EXPOSE 22 80
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD curl --fail --silent --max-time 4 http://127.0.0.1/health || exit 1
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/appeventos-entrypoint.sh"]

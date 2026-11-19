@@ -1,0 +1,11 @@
+FROM docker.io/library/postgres:17-alpine
+
+RUN apk add --no-cache bash openssh-server openssh-client shadow tini iproute2 iputils netcat-openbsd \
+    && mkdir -p /run/sshd
+
+COPY docker-entrypoint.sh /usr/local/bin/appeventos-entrypoint.sh
+RUN chmod 755 /usr/local/bin/appeventos-entrypoint.sh
+
+EXPOSE 22 5432
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/appeventos-entrypoint.sh"]
+CMD ["postgres"]
