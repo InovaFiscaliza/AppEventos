@@ -8,12 +8,14 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
 
-from app.config import URL_ACESSO_ANATEL
-from app.services.db import engine
+from src.config import URL_ACESSO_ANATEL
+from src.services.users.perfil_anatel import contexto_perfil_cabecalho
+from src.services.users.db import engine
 
 router = APIRouter(prefix="/eventos")
 templates = Jinja2Templates(
-    directory=Path(__file__).resolve().parent.parent / "templates"
+    directory=Path(__file__).resolve().parent.parent / "templates",
+    context_processors=[contexto_perfil_cabecalho],
 )
 templates.env.globals["url_acesso_anatel"] = URL_ACESSO_ANATEL
 
@@ -63,7 +65,7 @@ async def salvar_evento(
     with engine.begin() as conexao:
         conexao.execute(
             text(
-                "INSERT INTO TB_EVENTO (NO_EVENTO, DT_INICIO, DT_FIM) "
+                'INSERT INTO "SC_EVENTOS"."TB_EVENTO" ("NO_EVENTO", "DT_INICIO", "DT_FIM") '
                 "VALUES (:nome, :inicio, :fim)"
             ),
             {"nome": nome, "inicio": inicio, "fim": fim},

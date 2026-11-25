@@ -1,24 +1,38 @@
 """Constantes e configurações centralizadas."""
 
+import json
 import os
 import secrets
+from pathlib import Path
+
+_ARQUIVO_CREDENCIAIS_BANCO = Path(__file__).resolve().parent / ".secret" / ".secret_db"
+try:
+    _credenciais_banco = json.loads(
+        _ARQUIVO_CREDENCIAIS_BANCO.read_text(encoding="utf-8")
+    )
+except FileNotFoundError:
+    _credenciais_banco = {}
+
+DB_CFG = {
+    "address": "10.88.0.36",
+    "port": 5432,
+    "database": "DB_EVENTOS",
+    "user": _credenciais_banco.get("user"),
+    "password": _credenciais_banco.get("password"),
+}
 
 # Chave do cookie de sessão; sem a variável, as sessões expiram ao reiniciar o servidor.
 SESSION_SECRET = os.environ.get("SESSION_SECRET") or secrets.token_hex(32)
 
-# Dados do usuário logado na Anatel, consultados pelo navegador; vazio desativa.
+# Endpoint corporativo para iniciar a autenticação.
 URL_ACESSO_ANATEL = os.environ.get(
-    "URL_ACESSO_ANATEL", "https://fiscalizacao.anatel.gov.br/rffusion/api/users/me"
+    "URL_ACESSO_ANATEL", "https://fiscalizacao.anatel.gov.br/rffusion/api/users/login_eventos"
 )
 
-# Usuário administrativo que libera a tela de cadastro (ver docs/usuarios-de-acesso.md).
-USUARIO_CADASTRO = "Cadastrar Usuário"
-# SHA-256 da senha documentada, para não manter a senha em texto no código.
-SENHA_CADASTRO_SHA256 = (
-    "0f8eb4b72b6e0c9e88b388eb967b49e067ef1004bf07bffc22c3acb13b43580a"
-)
+# Credencial exclusiva do proxy que entrega o perfil autenticado.
+ANATEL_PROXY_TOKEN = os.environ.get("ANATEL_PROXY_TOKEN", "")
 
-# Papéis permitidos do usuário (colunas IC_* de TB_FISCAL), na ordem da tela.
+# Papéis operacionais atribuídos no vínculo com o evento (TB_EVENTO_FISCAL).
 PAPEIS_USUARIO = {
     "coordenacao": "Coordenação",
     "abordagem": "Abordagem",

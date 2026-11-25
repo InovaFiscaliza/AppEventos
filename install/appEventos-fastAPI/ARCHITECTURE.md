@@ -6,7 +6,7 @@ dependências de configuração, serviços ou entrypoints do RF.Fusion.
 
 O container `appEventos-fastAPI` usa Debian 12, Python 3.11 em ambiente virtual,
 FastAPI com Uvicorn, NGINX e SSH. O fluxo HTTP é
-`cliente -> host:9088 -> NGINX:80 -> Uvicorn:127.0.0.1:8000`.
+`cliente -> host:9088 -> NGINX:80 -> Uvicorn:127.0.0.1:8080`.
 O SSH é publicado em `9087:22`. A rede é `podman`, com IP atribuído pelo Podman.
 O diretório `/appEventos` do host é montado em `/appEventos` com `:z`.
 
@@ -16,7 +16,9 @@ por padrão, uma aplicação mínima da imagem disponibiliza `/`, `/health` e
 são instaladas durante o build e pertencem à imagem, fora do volume compartilhado.
 
 Tini administra o processo inicial. O entrypoint supervisiona Uvicorn, NGINX e
-SSH; a saída de qualquer um encerra o container com falha. Os logs HTTP e da
+SSH. O supervisor do Uvicorn aceita um sinal para reiniciar somente esse
+processo. Uma saída inesperada de qualquer serviço encerra o container com
+falha. Os logs HTTP e da
 aplicação vão para stdout/stderr. As chaves de host SSH ficam em volume próprio.
 A credencial inicial SSH é `root/changeme`; `SSH_PASSWORD` permite sobrescrever
 a senha no deploy. O deploy recusa

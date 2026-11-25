@@ -26,8 +26,8 @@ cleanup() {
 trap cleanup EXIT
 trap 'exit 0' TERM INT
 
-uvicorn "${APP_MODULE:-bootstrap:app}" --app-dir /appEventos \
-    --host 127.0.0.1 --port 8000 --proxy-headers --forwarded-allow-ips 127.0.0.1 &
+/usr/local/bin/appeventos-uvicorn-supervisor.sh uvicorn "${APP_MODULE:-bootstrap:app}" --app-dir /appEventos \
+    --host 127.0.0.1 --port 8080 --proxy-headers --forwarded-allow-ips 127.0.0.1 &
 service_pids+=("$!")
 nginx -g 'daemon off;' &
 service_pids+=("$!")

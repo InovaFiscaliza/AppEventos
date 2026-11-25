@@ -2,77 +2,10 @@
 
 {% block title %}Login - AppEventos{% endblock %}
 
-{# Na tela de login o nome aparece no cabeçalho, no lugar da faixa do topo. #}
-{% block usuario_anatel %}{% endblock %}
-
 {% block content %}
-<main class="login-page">
-	<header class="login-header">
-		<img class="login-brand" src="{{ url_for('static', path='Anatel.png') }}" alt="Anatel">
-		<h1>AppEventos</h1>
-		<p id="usuario-anatel-login" class="usuario-anatel-login" hidden>
-			<span id="usuario-anatel-login-foto" class="avatar">
-				<img alt="" hidden>
-				<span hidden></span>
-			</span>
-			<span>Conectado como <strong id="usuario-anatel-login-nome"></strong></span>
-		</p>
-		{% if url_acesso_anatel %}
-		{# Aparece quando o navegador não consegue ler a sessão da Anatel. #}
-		<p id="usuario-anatel-ausente" class="usuario-anatel-ausente" hidden>
-			Usuário Anatel não identificado.
-			<a href="{{ url_acesso_anatel }}" target="_blank" rel="noopener noreferrer">Entrar na Anatel</a>
-			e recarregue esta página.
-		</p>
-		{% endif %}
-		<p>Faça login para iniciar o trabalho no evento.</p>
-	</header>
-
-	<form class="login-form" method="post" action="{{ url_for('entrar') }}" aria-label="Login">
-		{% if erro %}
-		<p class="form-erro" role="alert">{{ erro }}</p>
-		{% endif %}
-
-		<div class="form-field">
-			<label for="evento">Evento</label>
-		    <select id="evento" name="evento">
-			   <option value="">Selecione...</option>
-			   <option value="novo" data-url="{{ url_for('novo_evento') }}">+ Criar Evento</option>
-		    </select>
-		</div>
-
-		<div class="form-field">
-			<label for="usuario">Usuário</label>
-			<select id="usuario" name="usuario" aria-describedby="usuario-ajuda">
-				<option value="">Selecione...</option>
-				{% for usuario in usuarios %}
-				<option value="{{ usuario.nome }}">{{ usuario.nome }} ({{ usuario.unidade }})</option>
-				{% endfor %}
-				{# Só vem preenchido enquanto não há usuários; data-login habilita a senha no app.js. #}
-				{% if usuario_cadastro %}
-				<option value="{{ usuario_cadastro }}" data-login="liberado">{{ usuario_cadastro }}</option>
-				{% endif %}
-			</select>
-			<small id="usuario-ajuda">Usuários cadastrados, ainda sem vínculo com o evento.</small>
-		</div>
-
-		<div class="form-field">
-			<label for="senha">Senha</label>
-			<input id="senha" name="senha" type="password" autocomplete="current-password" disabled>
-		</div>
-
-		<div class="form-field">
-			<label for="perfil">Entrar como</label>
-			<select id="perfil" name="perfil" disabled>
-				<option>Selecione um usuário primeiro</option>
-			</select>
-		</div>
-
-		<div class="form-actions">
-			<span>Login ainda não configurado.</span>
-			{# Habilitado pelo app.js somente para "Cadastrar Usuário". #}
-			<button id="entrar" type="submit" disabled>Entrar</button>
-		</div>
-	</form>
-</main>
+{% if erro %}
+<div class="login-page">
+	<p class="form-erro" role="alert">{{ erro }}</p>
+</div>
+{% endif %}
 {% endblock %}

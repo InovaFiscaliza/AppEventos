@@ -29,6 +29,7 @@ podman run -d \
     --name "$container_name" --hostname appeventos-fastapi \
     --restart unless-stopped --network podman \
     -p 9087:22 -p 9088:80 \
+    -e ANATEL_PROXY_TOKEN -e URL_ACESSO_ANATEL \
     -e SSH_PASSWORD -e "APP_MODULE=${APP_MODULE:-bootstrap:app}" \
     -v /appEventos:/appEventos:z \
     -v appeventos-fastapi-ssh:/var/lib/appeventos-ssh \

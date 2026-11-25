@@ -45,7 +45,7 @@ O cadastro de eventos precisa do PostgreSQL. Na primeira vez, crie o
 contêiner com o Podman (os mesmos comandos estão em `comandosbasicos`):
 
 ```powershell
-podman run -d --name appeventos-postgres -e POSTGRES_USER=appeventos -e POSTGRES_PASSWORD=appPasswd -e POSTGRES_DB=appeventos -p 5433:5432 -v appeventos-pgdata:/var/lib/postgresql/data --restart unless-stopped docker.io/library/postgres:16
+podman run -d --name appeventos-postgres -e POSTGRES_USER=appeventos -e POSTGRES_PASSWORD=appPasswd -e POSTGRES_DB=DB_EVENTOS -p 5433:5432 -v appeventos-pgdata:/var/lib/postgresql/data --restart unless-stopped docker.io/library/postgres:16
 ```
 
 A aplicação lê o endereço do banco na variável `DATABASE_URL`. Sem ela, usa o
@@ -55,7 +55,7 @@ endereço local acima (`app/services/db.py`). Para outro banco:
 $env:DATABASE_URL = "postgresql+psycopg://usuario:senha@servidor:porta/banco"
 ```
 
-As tabelas são criadas pelas migrações em `local_server/migrations/`.
+As tabelas são criadas pelo script `local_server/postgres/0001_novobd.sql`, executado com `psql`.
 
 Na pasta do projeto, execute:
 
@@ -89,7 +89,7 @@ uv run pytest
 - `app/static/app.js`: JavaScript da interface.
 - `app/static/rf-fusion/`: local reservado aos recursos visuais originais.
 - `tests/`: testes automatizados.
-- `local_server/migrations/`: migrações SQL do banco.
+- `local_server/postgres/`: migrações SQL do banco.
 - `pyproject.toml`: dependências e configuração do projeto.
 
 Para criar uma nova tela, normalmente você altera:
@@ -100,7 +100,7 @@ Para criar uma nova tela, normalmente você altera:
 4. `app/static/style.css` e a versão `?v=` em `base.html`, se houver estilo novo.
 5. `app/static/app.js`, se houver comportamento no navegador.
 6. `tests/test_<tela>.py` (novo): testes da rota.
-7. `local_server/migrations/`, se a tela exigir nova estrutura no banco.
+7. `local_server/postgres/`, se a tela exigir nova estrutura no banco.
 
 ## Ciclo de trabalho
 

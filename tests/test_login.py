@@ -1,12 +1,15 @@
 """Testes da pagina inicial."""
 
+import json
 from html.parser import HTMLParser
+from urllib.parse import urlsplit
+from unittest.mock import Mock
 
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
-from app.routers import login
+from src.main import app
+from src.routers import login
 
 
 class EstruturaPagina(HTMLParser):
@@ -47,14 +50,9 @@ def test_login_exibe_pagina_inicial(client: TestClient) -> None:
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/html")
     assert "AppEventos" in response.text
-    assert "/static/Anatel.png" in response.text
+    assert '/static/img/anatel_icon.svg" alt="Anatel"' in response.text
     assert 'alt="Anatel"' in response.text
-    assert "Faça login para iniciar o trabalho no evento." in response.text
     assert 'id="evento"' in response.text
-    assert 'id="usuario"' in response.text
-    assert 'id="senha"' in response.text
-    assert 'id="perfil"' in response.text
-    assert "Login ainda não configurado." in response.text
 
     pagina = EstruturaPagina()
     pagina.feed(response.text)
@@ -67,18 +65,31 @@ def test_arquivos_estaticos_do_template_estao_disponiveis(client: TestClient) ->
     pagina = EstruturaPagina()
     pagina.feed(client.get("/").text)
 
-    assert len(pagina.folhas_estilo) == 1
+    assert [urlsplit(url).path for url in pagina.folhas_estilo] == [
+        "/static/css/AnatelReactiveTheme.AnatelReactiveTheme.css",
+        "/static/css/Desempenho_CW.Desempenho.css",
+        "/static/css/appeventos_base.css",
+        "/static/style.css",
+    ]
     assert len(pagina.scripts) == 1
 
-    css = client.get(pagina.folhas_estilo[0])
+    for endereco in pagina.folhas_estilo:
+        css = client.get(endereco)
+        assert css.status_code == 200
+        assert css.headers["content-type"].startswith("text/css")
+
+    for peso in (400, 600, 700):
+        fonte = client.get(f"/static/fonts/rawline/rawline-{peso}.woff2")
+        assert fonte.status_code == 200
+        assert fonte.content.startswith(b"wOF2")
+
     script = client.get(pagina.scripts[0])
-    assert css.status_code == 200
-    assert css.headers["content-type"].startswith("text/css")
     assert script.status_code == 200
     assert "javascript" in script.headers["content-type"]
-    logo = client.get("/static/Anatel.png")
-    assert logo.status_code == 200
-    assert logo.headers["content-type"] == "image/png"
+    for nome in ("anatel_icon.svg", "profile_out.svg"):
+        imagem = client.get(f"/static/img/{nome}")
+        assert imagem.status_code == 200
+        assert imagem.headers["content-type"] == "image/svg+xml"
 
 
 @pytest.mark.parametrize("caminho", ["/pagina-inexistente", "/static/inexistente.css"])
@@ -87,19 +98,39 @@ def test_caminhos_inexistentes_retornam_404(client: TestClient, caminho: str) ->
     assert client.get(caminho).status_code == 404
 
 
-def test_login_consulta_usuario_anatel_sem_desviar(
+def test_login_oferece_acesso_anatel(
     client: TestClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """O / mostra o login direto e entrega ao navegador o endereço do RF Fusion."""
-    url = "https://fiscalizacao.anatel.gov.br/rffusion/api/users/me"
+    """A tela de login oferece acesso ao fluxo corporativo."""
+    url = "https://fiscalizacao.anatel.gov.br/rffusion/api/users/login_eventos"
     monkeypatch.setitem(login.templates.env.globals, "url_acesso_anatel", url)
 
     response = client.get("/", follow_redirects=False)
 
     assert response.status_code == 200
     assert response.template.name == "login.html"
-    assert f'data-url-usuario-anatel="{url}"' in response.text
-    assert 'id="usuario-anatel-ausente"' in response.text
+    assert 'href="http://testserver/entrar/anatel"' in response.text
+
+
+def test_login_do_rf_fusion_inicia_so_ao_clicar_no_botao(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    url = "https://fiscalizacao.anatel.gov.br/rffusion/api/users/login_eventos"
+    monkeypatch.setattr(login, "URL_ACESSO_ANATEL", url)
+
+    pagina = client.get("/", follow_redirects=False)
+    assert pagina.status_code == 200
+    assert "Anônimo" in pagina.text
+    assert '>Login</a>' in pagina.text
+
+    inicial = client.get("/entrar/anatel", follow_redirects=False)
+    assert inicial.status_code == 303
+    assert inicial.headers["location"] == url
+    assert inicial.headers["cache-control"] == "no-store"
+
+    retorno = client.get("/", follow_redirects=False)
+    assert retorno.status_code == 200
+    assert ">Login</a>" in retorno.text
 
 
 def test_login_nao_aceita_post(client: TestClient) -> None:
@@ -110,58 +141,120 @@ def test_login_nao_aceita_post(client: TestClient) -> None:
     assert "GET" in response.headers["allow"]
 
 
-def test_pagina_inicial_usa_template_login(client: TestClient) -> None:
-    """A rota / deve renderizar login.html com o formulário apontando para /entrar."""
-    response = client.get("/")
-
-    assert response.template.name == "login.html"
-    assert "<title>Login - AppEventos</title>" in response.text
-    assert 'action="http://testserver/entrar"' in response.text
-
-
-@pytest.mark.parametrize(
-    ("dados", "status"),
-    [
-        ({"usuario": "Cadastrar Usuário", "senha": "1234"}, 401),
-        ({"usuario": "Outro", "senha": "5000"}, 400),
-    ],
-)
-def test_erro_de_login_renderiza_template_login(
-    client: TestClient, dados: dict[str, str], status: int
+@pytest.mark.parametrize("caminho", ["/usuarios", "/entrar"])
+@pytest.mark.parametrize("metodo", ["GET", "POST"])
+def test_rotas_do_cadastro_manual_foram_removidas(
+    client: TestClient, caminho: str, metodo: str
 ) -> None:
-    """Falhas em /entrar devem reapresentar login.html com o alerta."""
-    response = client.post("/entrar", data=dados)
-
-    assert response.status_code == status
-    assert response.template.name == "login.html"
-    assert 'role="alert"' in response.text
-
-
-def test_entrar_nao_aceita_get(client: TestClient) -> None:
-    """/entrar só recebe o envio do formulário."""
-    assert client.get("/entrar").status_code == 405
-
-
-@pytest.mark.parametrize(
-    ("metodo", "caminho"),
-    [("get", "/sair"), ("get", "/usuarios"), ("post", "/usuarios")],
-)
-def test_rotas_que_voltam_ao_login(
-    client: TestClient, metodo: str, caminho: str
-) -> None:
-    """Saída e acesso sem sessão devem redirecionar para a tela de login."""
-    response = client.request(metodo.upper(), caminho, follow_redirects=False)
-
-    assert response.status_code == 303
-    assert response.headers["location"].endswith("/")
-    assert client.get(response.headers["location"]).template.name == "login.html"
+    assert client.request(metodo, caminho).status_code == 404
 
 
 def test_links_de_volta_apontam_para_login(client: TestClient) -> None:
-    """Os links "Cancelar" e "Início" devem levar à tela de login."""
-    novo_evento = client.get("/eventos/novo")
-    client.post("/entrar", data={"usuario": "Cadastrar Usuário", "senha": "5000"})
-    usuarios = client.get("/usuarios")
+    saida = client.get("/sair", follow_redirects=False)
+    assert saida.status_code == 303
+    assert saida.headers["location"].endswith("/")
+    assert client.get(saida.headers["location"]).template.name == "login.html"
 
+    novo_evento = client.get("/eventos/novo")
     assert 'href="http://testserver/">Cancelar</a>' in novo_evento.text
-    assert 'href="http://testserver/">Início</a>' in usuarios.text
+
+
+@pytest.mark.parametrize("caminho", ["/", "/entrar/anatel"])
+@pytest.mark.parametrize("token", ["token-teste", "incorreto", ""])
+def test_login_sincroniza_apenas_perfil_do_proxy(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, caminho: str, token: str
+) -> None:
+    monkeypatch.setattr(login, "ANATEL_PROXY_TOKEN", "token-teste")
+    sincronizar = Mock(return_value=42)
+    monkeypatch.setattr(login.servico_usuarios, "sincronizar_fiscal", sincronizar)
+    resposta = client.get(caminho, follow_redirects=False, headers={
+        "x-appeventos-proxy-token": token,
+        "x-user-profile": json.dumps({
+            "NA_USER_EMAIL": "fiscal@example.test",
+            "NA_USER_NAME": "Fiscal Teste",
+            "NA_DEPARTMENT": "Departamento",
+            "NA_JOB_TITLE": "Cargo",
+            "NA_LOCATION": "Local",
+        }),
+    })
+
+    assert resposta.status_code == (200 if caminho == "/" else 303)
+    if token == "token-teste":
+        sincronizar.assert_called_once_with({
+            "email": "fiscal@example.test",
+            "nome": "Fiscal Teste",
+            "departamento": "Departamento",
+            "cargo": "Cargo",
+            "local": "Local",
+        })
+        assert 'title="Fiscal Teste">Fiscal Teste</span>' in client.get("/").text
+    else:
+        sincronizar.assert_not_called()
+
+
+def test_login_rejeita_perfil_invalido_do_proxy(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(login, "ANATEL_PROXY_TOKEN", "token-teste")
+    resposta = client.get("/", headers={
+        "x-appeventos-proxy-token": "token-teste",
+        "x-user-profile": "invalido",
+    })
+    assert resposta.status_code == 502
+    assert "Perfil Anatel inválido." in resposta.text
+
+
+def test_formulario_cadastra_fiscal_e_mostra_perfil_na_pagina_inicial(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cadastrar = Mock()
+    monkeypatch.setattr(login.servico_usuarios, "cadastrar_fiscal", cadastrar)
+
+    resposta = client.post("/api/usuarios/login-evento", data={
+        "NA_USER_EMAIL": "fiscal@example.test",
+        "NA_USER_NAME": "Fiscal de São Paulo",
+        "NA_DEPARTMENT": "Unidade de teste",
+        "NA_JOB_TITLE": "Cargo de teste",
+        "NA_LOCATION": "São Paulo, SP",
+        "state": "ignorado",
+        "signature": "ignorada",
+    }, follow_redirects=False)
+
+    assert resposta.status_code == 303
+    assert resposta.headers["location"] == "/"
+    assert "session" not in resposta.cookies
+    pagina = client.get("/")
+    assert pagina.status_code == 200
+    assert 'title="Fiscal de São Paulo">Fiscal de São Paulo</span>' in pagina.text
+    assert "FP" in pagina.text
+    assert "fiscal@example.test" not in pagina.text
+    assert "Fiscal de São Paulo" in client.get("/").text
+    assert "Fiscal de São Paulo" in client.get("/eventos/novo").text
+    assert "Anônimo" in client.get("/sair").text
+    assert "Fiscal de São Paulo" not in client.get("/").text
+    cadastrar.assert_called_once_with({
+        "email": "fiscal@example.test",
+        "nome": "Fiscal de São Paulo",
+        "departamento": "Unidade de teste",
+        "cargo": "Cargo de teste",
+        "local": "São Paulo, SP",
+    })
+
+
+def test_formulario_incompleto_nao_cadastra(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cadastrar = Mock()
+    monkeypatch.setattr(login.servico_usuarios, "cadastrar_fiscal", cadastrar)
+
+    resposta = client.post(
+        "/api/usuarios/login-evento", data={"NA_USER_EMAIL": "fiscal@example.test"}
+    )
+
+    assert resposta.status_code == 422
+    assert not resposta.cookies
+    assert "O RF.Fusion enviou um formulário de login incompleto ou inválido." in resposta.text
+    assert ">Login</a>" in resposta.text
+    assert "fiscal@example.test" not in resposta.text
+    assert resposta.headers["cache-control"] == "no-store"
+    cadastrar.assert_not_called()

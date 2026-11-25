@@ -2,15 +2,14 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "FastAPI (depuração)",
+            "name": "FastAPI (depuração com recarga)",
             "type": "debugpy",
             "request": "launch",
-            "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
-            "program": "${workspaceFolder}\\main.py",
-            "justMyCode": true,
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}"
-            }
+            "module": "uvicorn",
+            "args": ["src.main:app", "--host", "127.0.0.1", "--port", "8001", "--reload", "--reload-dir", "src"],
+            "cwd": "${workspaceFolder}",
+            "subProcess": true,
+            "justMyCode": true
         }
     ]
 }

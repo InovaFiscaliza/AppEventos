@@ -5,8 +5,8 @@ from contextlib import contextmanager
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
-from app.routers import evento
+from src.main import app
+from src.routers import evento
 
 
 class ConexaoFalsa:
@@ -46,7 +46,7 @@ def engine_falsa(monkeypatch: pytest.MonkeyPatch) -> EngineFalsa:
 
 def test_login_oferece_criar_evento(client: TestClient) -> None:
     """O seletor de evento deve levar ao formulário de criação."""
-    response = client.get("/")
+    response = client.get("/sair")
 
     assert "+ Criar Evento" in response.text
     assert '/eventos/novo"' in response.text

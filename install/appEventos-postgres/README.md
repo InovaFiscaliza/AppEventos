@@ -61,5 +61,15 @@ Para verificar a instalação:
 podman ps -a --pod --filter pod=appeventos-postgres-pod
 podman logs appeventos-postgres
 podman logs appeventos-pgadmin
-podman exec -u postgres appeventos-postgres psql -X -U postgres -d postgres -c '\l'
+podman exec -u postgres appeventos-postgres psql -X -U postgres -d template1 -c '\l'
+```
+
+## Criar o banco DB_EVENTOS
+
+Em uma instalação nova, execute o script consolidado a partir da raiz do
+repositório. Ele cria o banco quando necessário e inicializa o schema `SC_EVENTOS`.
+
+```bash
+podman exec -i -u postgres appeventos-postgres psql -X -U postgres -d template1 \
+  < local_server/postgres/0001_novobd.sql
 ```

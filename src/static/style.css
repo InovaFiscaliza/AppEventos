@@ -1,3 +1,27 @@
+@font-face {
+	font-family: Rawline;
+	src: url("fonts/rawline/rawline-400.woff2") format("woff2");
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: Rawline;
+	src: url("fonts/rawline/rawline-600.woff2") format("woff2");
+	font-style: normal;
+	font-weight: 600;
+	font-display: swap;
+}
+
+@font-face {
+	font-family: Rawline;
+	src: url("fonts/rawline/rawline-700.woff2") format("woff2");
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+}
+
 :root {
 	color-scheme: light;
 	--azul: #12355e;
@@ -243,21 +267,235 @@ body {
 	font-weight: 700;
 }
 
-/* Telas internas: topo, trilha, etapa e painéis no padrão do Novo Registro. */
-.app-topo {
-	display: flex;
-	align-items: center;
-	min-height: 64px;
-	padding: 0 1rem;
-	border-top: 4px solid #1b2a3a;
-	background: #0b5aa2;
+.header {
+	background: #123454;
 }
 
-.app-marca {
+.header .header-top {
+	height: 52px;
+}
+
+.header .header-navigation {
+	min-width: 0;
+}
+
+.header .app-logo {
+	background: transparent;
+	filter: brightness(0) invert(1);
+	transform: none;
+}
+
+.header .header-logo {
+	padding-right: 1rem;
+}
+
+.header .wf-header-link small {
+	display: block;
+	color: #d0e0ed;
+}
+
+.header .app-topo-evento {
+	flex: 0 0 auto;
+	gap: 0.5rem;
+	margin-left: auto;
+}
+
+.header .app-topo-evento label {
+	color: #d0e0ed;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	letter-spacing: normal;
+}
+
+.header .app-topo-evento select {
+	width: 140px;
+	height: 32px;
+	padding: 0 1.75rem 0 0.625rem;
+	border-color: #ffffff46;
+	border-radius: 6px;
+	background: #ffffff12;
 	color: #fff;
-	font-size: 1.6rem;
+	cursor: pointer;
+}
+
+.header .app-topo-evento option {
+	background: #fff;
+	color: #123454;
+}
+
+.header .app-topo-evento .select-shell::after,
+.header .app-perfil-menu summary::after {
+	width: 0.375rem;
+	height: 0.375rem;
+	border-right: 1.5px solid #d0e0ed;
+	border-bottom: 1.5px solid #d0e0ed;
+}
+
+.header .app-topo-evento .select-shell::after {
+	right: 0.75rem;
+}
+
+.header .wf-header-user {
+	position: relative;
+	gap: 0.5rem;
+	margin-left: 12px;
+	padding: 0 0 0 13px;
+}
+
+.header .wf-header-user::before {
+	position: absolute;
+	top: 50%;
+	left: 0;
+	height: 20px;
+	border-left: 1px solid #ffffff55;
+	content: "";
+	transform: translateY(-50%);
+}
+
+.header .app-perfil-nome {
+	max-width: clamp(6rem, 24vw, 20rem);
+}
+
+.header .wf-header-avatar {
+	width: 26px;
+	height: 26px;
+	flex-basis: 26px;
+}
+
+.header .app-perfil-iniciais {
+	background: #1c62a0;
+	color: #fff;
+	font-size: 11px;
+	font-weight: 700;
+}
+
+.header .app-perfil-acao {
+	display: inline-flex;
+	align-items: center;
+	flex: none;
+	min-height: 30px;
+	margin-left: 0.25rem;
+	padding: 0.375rem 0.75rem;
+	border-radius: 6px;
+	background: #e8f2fb;
+	color: #123454;
 	font-weight: 700;
 	text-decoration: none;
+}
+
+.header .app-perfil-acao:hover {
+	background: #fff;
+}
+
+.header .app-perfil-menu {
+	position: relative;
+	min-width: 0;
+}
+
+.header .app-perfil-menu summary {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	min-height: 34px;
+	padding: 0.25rem 0.5rem;
+	border-radius: 6px;
+	list-style: none;
+	cursor: pointer;
+}
+
+.header .app-perfil-menu summary::-webkit-details-marker {
+	display: none;
+}
+
+.header .app-perfil-menu summary::after {
+	content: "";
+	flex: 0 0 0.375rem;
+	transform: translateY(-2px) rotate(45deg);
+}
+
+.header .app-perfil-menu summary:hover,
+.header .app-perfil-menu[open] summary {
+	background: #ffffff1a;
+}
+
+.header .app-perfil-opcoes {
+	position: absolute;
+	z-index: 1;
+	inset: calc(100% + 0.375rem) 0 auto auto;
+	min-width: 8rem;
+	padding: 0.25rem;
+	border: 1px solid #d4dfe9;
+	border-radius: 8px;
+	background: #fff;
+	box-shadow: 0 8px 24px #12345424;
+}
+
+.header .app-perfil-menu:not([open]) .app-perfil-opcoes {
+	display: none;
+}
+
+.header .app-perfil-opcoes a {
+	display: block;
+	padding: 0.5rem 0.75rem;
+	border-radius: 4px;
+	color: #123454;
+	font-weight: 600;
+	text-decoration: none;
+}
+
+.header .app-perfil-opcoes a:hover,
+.header .app-perfil-opcoes a:focus-visible {
+	background: #e8f2fb;
+}
+
+.header .wf-header-link:focus-visible,
+.header .app-perfil-acao:focus-visible,
+.header .app-perfil-menu summary:focus-visible {
+	outline: var(--border-size-m) solid var(--color-yellow-anatel);
+}
+
+@media (max-width: 640px) {
+	.header .header-top {
+		height: auto;
+	}
+
+	.header .app-menu-content {
+		flex-wrap: wrap;
+		row-gap: 0.375rem;
+		min-height: var(--header-size);
+		padding-block: 0.5rem;
+	}
+
+	.header .header-logo {
+		padding-right: 0.25rem;
+	}
+
+	.header .app-topo-evento {
+		order: 1;
+		flex-basis: 100%;
+		margin-left: 0;
+		padding: 0.375rem 0 0;
+		border-top: 1px solid #ffffff35;
+	}
+
+	.header .wf-header-user {
+		margin-left: auto;
+		padding: 0;
+	}
+
+	.header .wf-header-user::before {
+		display: none;
+	}
+
+	.header .app-perfil-nome {
+		max-width: min(30vw, 10rem);
+	}
+}
+
+@media (max-width: 420px) {
+	.header .wf-header-link small {
+		display: none;
+	}
 }
 
 .app-trilha {

@@ -21,7 +21,8 @@ RUN python -m pip install --no-cache-dir --timeout 120 --retries 5 \
 COPY bootstrap.py /opt/appeventos/bootstrap.py
 COPY nginx-appeventos.conf /etc/nginx/conf.d/appeventos.conf
 COPY docker-entrypoint.sh /usr/local/bin/appeventos-entrypoint.sh
-RUN chmod 755 /usr/local/bin/appeventos-entrypoint.sh \
+COPY uvicorn-supervisor.sh /usr/local/bin/appeventos-uvicorn-supervisor.sh
+RUN chmod 755 /usr/local/bin/appeventos-entrypoint.sh /usr/local/bin/appeventos-uvicorn-supervisor.sh \
     && nginx -t
 
 WORKDIR /appEventos

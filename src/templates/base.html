@@ -1,27 +1,83 @@
+{% macro iniciais_anatel(nome) -%}
+    {%- set partes = nome.split() -%}
+    {{- (partes[0][0] ~ (partes[-1][0] if partes | length > 1 else "")) | upper if partes else "" -}}
+{%- endmacro %}
 <!doctype html>
 <html lang="pt-BR">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}AppGrandesEventos{% endblock %}</title>
-    {# Aumente ?v= ao alterar style.css para o navegador baixar a versão nova. #}
-    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}?v=12">
-    <script src="{{ url_for('static', path='app.js') }}" defer></script>
+    <title>{% block title %}AppEventos{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='img/anatel_icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/AnatelReactiveTheme.AnatelReactiveTheme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/Desempenho_CW.Desempenho.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/appeventos_base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='style.css') }}?v=20">
+    {% block extra_css %}{% endblock %}
+    <script src="{{ url_for('static', path='app.js') }}?v=2" defer></script>
 </head>
-<body data-url-usuario-anatel="{{ url_acesso_anatel }}">
-    {# Preenchido pelo app.js com os dados do RF Fusion; continua oculto se a consulta falhar. #}
-    {% block usuario_anatel %}
-    <div id="usuario-anatel" class="usuario-anatel" hidden>
-        <span id="usuario-anatel-foto" class="avatar">
-            <img alt="" hidden>
-            <span hidden></span>
-        </span>
-        <span>
-            <strong id="usuario-anatel-nome"></strong>
-            <small id="usuario-anatel-detalhe"></small>
-        </span>
+<body class="desktop">
+    <div class="layout layout-top fixed-header">
+        <div class="main">
+            <header class="header">
+                <div class="header-top conteudo-centralizado">
+                    <div class="header-content display-flex">
+                        <div class="header-navigation">
+                            <div class="app-menu-content display-flex align-items-center text-neutral-0">
+                                <div class="header-logo wf-header-brand">
+                                    <a class="application-name display-flex align-items-center full-height wf-header-link" href="{{ url_for('login') }}">
+                                        <img class="app-logo wf-header-logo-mark" src="{{ url_for('static', path='img/anatel_icon.svg') }}" alt="Anatel">
+                                        <span>
+                                            App Eventos
+                                            <small class="font-size-xs font-regular">Fiscalização em Grandes Eventos</small>
+                                        </span>
+                                    </a>
+                                </div>
+
+                                <div class="app-topo-evento display-flex align-items-center">
+                                    <label class="margin-bottom-none" for="evento">Evento</label>
+                                    <div class="select-shell font-regular">
+                                        <select id="evento" name="evento" class="form-control">
+                                            <option value="">Selecionar</option>
+                                            <option value="novo" data-url="{{ url_for('novo_evento') }}">+ Criar Evento</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="wf-header-user">
+                                    {% if perfil_cabecalho %}
+                                    <details class="app-perfil-menu">
+                                        <summary>
+                                            <span class="wf-header-avatar app-perfil-iniciais" aria-hidden="true">
+                                                {{ iniciais_anatel(perfil_cabecalho.nome) }}
+                                            </span>
+                                            <span class="app-perfil-nome" title="{{ perfil_cabecalho.nome }}">{{ perfil_cabecalho.nome }}</span>
+                                        </summary>
+                                        <div class="app-perfil-opcoes">
+                                            <a href="{{ url_for('sair') }}">Sair</a>
+                                        </div>
+                                    </details>
+                                    {% else %}
+                                        <span class="wf-header-avatar">
+                                            <img src="{{ url_for('static', path='img/profile_out.svg') }}" alt="">
+                                        </span>
+                                        <span class="app-perfil-nome">Anônimo</span>
+                                        {% if url_acesso_anatel %}
+                                        <a class="app-perfil-acao" href="{{ url_for('entrar_anatel') }}">Login</a>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main>
+                {% block breadcrumb %}{% endblock %}
+                {% block content %}{% endblock %}
+            </main>
+        </div>
     </div>
-    {% endblock %}
-    {% block content %}{% endblock %}
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
