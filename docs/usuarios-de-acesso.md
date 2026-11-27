@@ -1,19 +1,11 @@
 # Usuários de acesso
 
-## Login do RF.Fusion pelo navegador
+O AppEventos recebe as requisições depois da autenticação de dois fatores no F5. Para identificar o usuário encaminhado pelo RF.Fusion, a aplicação lê `X-User-Name` e `X-User-Email`. Com os dois campos válidos, o AppEventos cadastra ou atualiza o fiscal pelo e-mail, sem distinção de maiúsculas e minúsculas. Acentos enviados em UTF-8 são decodificados na leitura dos cabeçalhos.
 
-A página inicial abre como **Anônimo**. Ao selecionar **Login**, o AppEventos redireciona para `https://fiscalizacao.anatel.gov.br/rffusion/api/users/login_eventos`. A variável `URL_ACESSO_ANATEL` permite alterar esse destino.
+Os campos opcionais `X-User-Job-Title`, `X-User-Department`, `X-User-Location` e `X-User-Avatar-Url` atualizam os dados do fiscal. O avatar deve ser uma URL HTTPS sem credenciais, parâmetros ou fragmento.
 
-Depois de autenticar o usuário, o RF.Fusion envia um formulário no navegador com `method="post"` e `action="http://rhfisnsdsin01:9088/api/usuarios/login-evento"`. O formato é `application/x-www-form-urlencoded`. Envie `NA_USER_EMAIL` e `NA_USER_NAME`. Os campos `NA_DEPARTMENT`, `NA_JOB_TITLE` e `NA_LOCATION` são opcionais.
+A sessão do AppEventos guarda o fiscal e a seleção de perfil e evento. A identidade vem dos cabeçalhos de cada requisição. Se ela mudar ou estiver ausente, a seleção anterior é descartada. As permissões são consultadas no PostgreSQL, a partir dos vínculos do fiscal com eventos e dos papéis globais ativos.
 
-O AppEventos insere os campos na tabela `SC_EVENTOS.TB_FISCAL` se o e-mail ainda não existir. A comparação de e-mail ignora maiúsculas e minúsculas. O POST devolve `303` para `/` e o nome recebido aparece no cabeçalho por até oito horas, ou até selecionar **Sair**. O formulário alimenta o cadastro básico do protótipo e a exibição do nome. A sessão autenticada usa o perfil fornecido pelo proxy.
+A implantação confia na identidade encaminhada pelo RF.Fusion. O serviço deve ficar atrás do gateway autenticado, que sobrescreve os cabeçalhos `X-User-*` vindos do cliente. Acesso direto à porta do backend permite ao cliente informar a própria identidade.
 
-## Perfil fornecido pelo proxy
-
-O proxy corporativo autentica o usuário e encaminha o perfil ao AppEventos. A aplicação lê `x-user-profile` nas rotas `/` e `/entrar/anatel`. O JSON inclui `NA_USER_EMAIL`, `NA_USER_NAME`, `NA_DEPARTMENT`, `NA_JOB_TITLE` e `NA_LOCATION`.
-
-Configure `ANATEL_PROXY_TOKEN` com um segredo aleatório compartilhado entre FastAPI e proxy. O proxy deve descartar os cabeçalhos `x-user-profile` e `x-appeventos-proxy-token` enviados pelo navegador. Em requisições autenticadas, ele deve preencher o primeiro com o perfil verificado e o segundo com o token. Encaminhe os cabeçalhos por uma conexão protegida com o backend. Remova o cookie corporativo da requisição ao FastAPI e preserve o cookie da sessão do AppEventos.
-
-Quando recebe o perfil autenticado, o AppEventos localiza o registro pelo e-mail, sem distinção entre maiúsculas e minúsculas, e atualiza o perfil e a data de atualização quando algum campo muda. Cadastros antigos sem e-mail não são associados automaticamente ao perfil corporativo.
-
-**Sair** encerra a sessão do AppEventos. Para voltar a entrar no mesmo navegador, use **Login**. A sessão usa a variável de ambiente `SESSION_SECRET`. Sem ela, a chave é gerada a cada início do servidor e as sessões abertas expiram.
+Defina `SESSION_SECRET` no ambiente para preservar a seleção entre reinicializações.

@@ -1,1 +1,0 @@
-"""Rotas da aplicacao."""

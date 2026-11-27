@@ -1,7 +1,7 @@
 # PostgreSQL e pgAdmin do appEventos
 
-Instalação própria do appEventos. Esta pasta é autocontida e pode ser movida
-para seu repositório, sem dependências dos arquivos ou da configuração do RF.Fusion.
+Instalação própria do appEventos. Usa o SQL e os dados de referência em
+`local_server/postgres/`, no repositório AppEventos.
 Cria PostgreSQL 17 Alpine com SSH e pgAdmin em containers separados no pod
 `appeventos-postgres-pod`.
 
@@ -12,10 +12,10 @@ Cria PostgreSQL 17 Alpine com SSH e pgAdmin em containers separados no pod
 | 9086 | 8080 | pgAdmin HTTP |
 
 O pod usa `--network podman --ip 10.88.0.36`. O SSH do pgAdmin não é publicado.
-O PostgreSQL inicializa apenas seu cluster padrão, com os bancos internos
-`postgres`, `template0` e `template1`. Não cria banco do appEventos ou
-`RFFUSION`, não instala PostGIS e não executa SQLs ou cargas do repositório.
-`POSTGRES_DB` do ambiente é ignorado deliberadamente.
+No primeiro startup com um volume vazio, o PostgreSQL cria `DB_EVENTOS`,
+inicializa `SC_EVENTOS` e carrega `TB_MUNICIPIO` do CSV incluído na imagem.
+A carga usa os 5.571 registros das 27 UFs da API de Localidades do IBGE,
+consultada em 26/11/2026, e roda sem acesso à internet.
 
 ## Executar
 
@@ -64,12 +64,14 @@ podman logs appeventos-pgadmin
 podman exec -u postgres appeventos-postgres psql -X -U postgres -d template1 -c '\l'
 ```
 
-## Criar o banco DB_EVENTOS
+## Esquema e carga em volumes existentes
 
-Em uma instalação nova, execute o script consolidado a partir da raiz do
-repositório. Ele cria o banco quando necessário e inicializa o schema `SC_EVENTOS`.
+O PostgreSQL executa a inicialização automática apenas em volumes vazios.
+Para aplicar o SQL consolidado em um volume que já existe, use os arquivos
+do repositório montado no container. A carga preserva registros com códigos
+IBGE já cadastrados.
 
 ```bash
-podman exec -i -u postgres appeventos-postgres psql -X -U postgres -d template1 \
-  < local_server/postgres/0001_novobd.sql
+podman exec -u postgres -w /appEventos/AppEventos/local_server/postgres \
+  appeventos-postgres psql -X -U postgres -d postgres -f 0001_novobd.sql
 ```

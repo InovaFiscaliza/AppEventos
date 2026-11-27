@@ -9,6 +9,7 @@ if (($#)); then
 fi
 
 projectRoot="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+postgresSources="$(cd "${projectRoot}/../../../local_server/postgres" && pwd)"
 if [[ ! -d /appEventos ]]; then
     echo "ERROR: Create /appEventos on the Podman host before deploying." >&2
     exit 1
@@ -45,7 +46,8 @@ if [[ " ${controllers} " == *" memory "* ]]; then resourceArgs+=(--memory=2g --m
 if [[ " ${controllers} " == *" pids "* ]]; then resourceArgs+=(--pids-limit=1024); else echo "WARNING: PID limit unavailable."; fi
 
 podman network inspect podman >/dev/null
-podman build --pull=always -t "$imageName" "${projectRoot}/postgres"
+podman build --pull=always --build-context "appeventos_sql=$postgresSources" \
+    -t "$imageName" "${projectRoot}/postgres"
 podman build --pull=always -t "$pgadminImage" "${projectRoot}/pgadmin"
 podman pull "$infraImage"
 for volumeName in appeventos-postgres-data appeventos-postgres-ssh appeventos-pgadmin-data appeventos-pgadmin-ssh; do
@@ -92,4 +94,4 @@ podman run -d \
     -v appeventos-pgadmin-data:/var/lib/pgadmin:U \
     -v appeventos-pgadmin-ssh:/var/lib/appeventos-pgadmin-ssh \
     "$pgadminImage"
-printf 'appEventos pod created. PostgreSQL is ready without application databases; check pgAdmin logs before connecting.\n'
+printf 'appEventos pod created. PostgreSQL is ready; check pgAdmin logs before connecting.\n'

@@ -1,0 +1,214 @@
+{% extends "cadastro/base.html" %}
+
+{% block cadastro_formulario %}
+<form id="formulario-evento" class="evento-cadastro-form" method="post"
+      action="{{ url_for('salvar_cadastro_evento') }}">
+    {% if erro %}
+    <p id="evento-form-erro" class="form-erro" role="alert" tabindex="-1">{{ erro }}</p>
+    {% endif %}
+
+    <div class="evento-cadastro-campos">
+        <fieldset class="wf-panel">
+            <legend>Dados do evento</legend>
+
+            <div class="form-field">
+                <label for="nome">Nome do evento</label>
+                <input id="nome" name="nome" class="form-control" type="text"
+                       maxlength="200" value="{{ nome or '' }}" required>
+            </div>
+
+            <div class="form-field">
+                <label for="data_inicio">Data de início</label>
+                <input id="data_inicio" name="data_inicio" class="form-control"
+                       type="date" value="{{ data_inicio or '' }}" required>
+            </div>
+
+            <div class="form-field">
+                <label for="data_fim">Data de fim</label>
+                <input id="data_fim" name="data_fim" class="form-control"
+                       type="date" value="{{ data_fim or '' }}" required>
+            </div>
+            <div class="form-field">
+                <label for="codigo-acao-evento">Código da ação de fiscalização</label>
+                <div class="evento-campo-com-icone">
+                    <input id="codigo-acao-evento" name="codigo_acao" class="form-control" type="text"
+                           inputmode="numeric" pattern="[0-9]{1,10}" maxlength="10"
+                           value="{{ codigo_acao or '' }}" data-acao-url="{{ consulta_acao_url }}"
+                           aria-describedby="status-acao-evento">
+                    <button type="button" id="consultar-acao-evento" class="evento-campo-acao evento-acao-consultar"
+                            aria-label="Consultar ação de fiscalização" title="Consultar ação de fiscalização">
+                        <span aria-hidden="true"></span>
+                    </button>
+                </div>
+                <p id="status-acao-evento" class="evento-equipe-status" role="status"></p>
+            </div>
+        </fieldset>
+
+        <fieldset class="wf-panel">
+            <legend>Localização aproximada</legend>
+
+            <div class="form-field">
+                <label for="latitude">Latitude</label>
+                <input id="latitude" name="latitude" class="form-control" type="number"
+                       min="-90" max="90" step="0.000001" value="{{ latitude or '' }}">
+            </div>
+
+            <div class="form-field">
+                <label for="longitude">Longitude</label>
+                <input id="longitude" name="longitude" class="form-control" type="number"
+                       min="-180" max="180" step="0.000001" value="{{ longitude or '' }}">
+            </div>
+
+            <div class="form-field">
+                <label for="municipio-evento">Município</label>
+                <div class="evento-campo-com-icone">
+                    <input id="municipio-evento" class="form-control" type="text" readonly
+                           placeholder="Informe as coordenadas" value="{{ municipio or '' }}"
+                           aria-describedby="municipio-evento-status"
+                           data-consulta-url="{{ consulta_municipio_url }}">
+                    <button type="button" id="abrir-mapa-evento" class="evento-campo-acao evento-mapa-acao"
+                            aria-haspopup="dialog" aria-label="Selecionar no mapa" title="Selecionar no mapa">
+                        <span aria-hidden="true"></span>
+                    </button>
+                </div>
+                <p id="municipio-evento-status" role="status"></p>
+            </div>
+        </fieldset>
+
+        <fieldset class="wf-panel">
+            <legend>Informações adicionais</legend>
+
+            <div class="form-field">
+                <label for="id_fiscal_responsavel">Fiscal responsável</label>
+                <div class="select-shell">
+                    <select class="form-control" id="id_fiscal_responsavel" name="id_fiscal_responsavel">
+                        <option value="">Selecione um fiscal</option>
+                        {% for fiscal in fiscais %}
+                        <option value="{{ fiscal.ID_FISCAL }}"{% if (fiscal.ID_FISCAL | string) == id_fiscal_responsavel %} selected{% endif %}>
+                            {{ fiscal.NO_FISCAL }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label for="teste_etiquetagem">Possui teste de etiquetagem?</label>
+                <div class="select-shell">
+                    <select class="form-control" id="teste_etiquetagem" name="teste_etiquetagem">
+                        <option value="0">Não</option>
+                        <option value="1"{% if teste_etiquetagem == '1' %} selected{% endif %}>Sim</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label for="observacao">Observações</label>
+                <textarea class="form-control" id="observacao" name="observacao"
+                          rows="3">{{ observacao or '' }}</textarea>
+            </div>
+        </fieldset>
+    </div>
+
+    <fieldset class="wf-panel evento-equipe">
+        <legend>Equipe envolvida</legend>
+
+        <div class="evento-equipe-colunas">
+            <div class="form-field evento-equipe-painel">
+                <label class="evento-equipe-subtitulo" for="buscar-fiscal-evento">Buscar fiscal</label>
+                <input id="buscar-fiscal-evento" class="form-control" type="search"
+                       autocomplete="off" placeholder="Digite o nome para adicionar"
+                       aria-controls="resultados-fiscais-evento">
+                <p id="status-busca-fiscais" class="evento-equipe-status" role="status"></p>
+                <ul id="resultados-fiscais-evento" class="evento-equipe-lista" aria-label="Resultados da busca"></ul>
+            </div>
+
+            <div class="evento-equipe-painel">
+                <h2 class="evento-equipe-subtitulo">Fiscais na equipe</h2>
+                <p id="equipe-evento-vazia" class="evento-equipe-status">Nenhum fiscal adicionado.</p>
+                <ul id="equipe-fiscais-evento" class="evento-equipe-lista" aria-label="Fiscais na equipe"></ul>
+                <div id="equipe-fiscais-valores">
+                    {% for fiscal in fiscais if (fiscal.ID_FISCAL | string) in (ids_fiscais or []) %}
+                    <input type="hidden" name="ids_fiscais" value="{{ fiscal.ID_FISCAL }}">
+                    {% endfor %}
+                </div>
+                <p id="status-equipe-evento" class="evento-equipe-status" role="status"></p>
+            </div>
+        </div>
+    </fieldset>
+
+    <div class="acoes-pagina evento-acoes">
+        <a class="btn btn-secondary" href="{{ url_for('index') }}">Cancelar</a>
+        <button type="submit" class="btn btn-primary">Salvar evento</button>
+    </div>
+</form>
+
+<dialog id="confirmacao-evento" class="wf-panel evento-confirmacao"
+        aria-labelledby="titulo-confirmacao-evento" aria-describedby="descricao-confirmacao-evento">
+    <h2 id="titulo-confirmacao-evento" class="wf-panel-title">Confirmar cadastro do evento</h2>
+    <p id="descricao-confirmacao-evento">Confira os dados e a equipe antes de confirmar.</p>
+
+    <dl class="evento-resumo">
+        <dt>Ação de fiscalização</dt><dd id="resumo-acao-evento"></dd>
+        <dt>Evento</dt><dd id="resumo-nome-evento"></dd>
+        <dt>Período</dt><dd id="resumo-periodo-evento"></dd>
+        <dt>Município</dt><dd id="resumo-municipio-evento" aria-live="polite"></dd>
+        <dt>Coordenadas</dt><dd id="resumo-coordenadas-evento"></dd>
+        <dt>Fiscal responsável</dt><dd id="resumo-responsavel-evento"></dd>
+        <dt>Demais fiscais</dt><dd id="resumo-equipe-evento"></dd>
+        <dt>Teste de etiquetagem</dt><dd id="resumo-teste-evento"></dd>
+        <dt>Observações</dt><dd id="resumo-observacao-evento"></dd>
+    </dl>
+
+    <div class="acoes-pagina evento-acoes">
+        <button type="button" class="btn btn-secondary" id="voltar-revisao-evento" autofocus>
+            Voltar e editar
+        </button>
+        <button type="button" class="btn btn-primary" id="confirmar-cadastro-evento">
+            Confirmar cadastro
+        </button>
+    </div>
+</dialog>
+
+<dialog id="dialog-mapa-evento" class="wf-panel evento-mapa-modal"
+        aria-labelledby="titulo-mapa-evento">
+    <div class="evento-mapa-cabecalho">
+        <h2 id="titulo-mapa-evento" class="wf-panel-title">Local do evento</h2>
+        <div class="evento-mapa-controles">
+            <label>
+                <input type="checkbox" id="zoom-scroll-evento" checked>
+                Zoom com rolagem
+            </label>
+            <button type="button" class="btn btn-secondary" id="expandir-mapa-evento"
+                    aria-controls="mapa-evento">Expandir mapa</button>
+        </div>
+    </div>
+    <p>Clique ou toque no mapa para marcar o local.</p>
+
+    <div id="mapa-evento" role="region" aria-label="Mapa do local do evento"></div>
+
+    <div class="acoes-pagina evento-acoes">
+        <button type="button" class="btn btn-secondary" id="cancelar-mapa-evento" autofocus>
+            Cancelar
+        </button>
+        <button type="button" class="btn btn-primary" id="confirmar-mapa-evento" disabled>
+            OK
+        </button>
+    </div>
+</dialog>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin="anonymous">
+{% endblock %}
+
+{% block extra_js %}
+<script defer
+        src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin="anonymous"></script>
+<script defer src="{{ url_for('static', path='js/evento.js') }}?v=5"></script>
+{% endblock %}

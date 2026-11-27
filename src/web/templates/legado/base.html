@@ -1,0 +1,30 @@
+{% macro iniciais_anatel(nome) -%}
+    {%- set partes = nome.split() -%}
+    {{- (partes[0][0] ~ (partes[-1][0] if partes | length > 1 else "")) | upper -}}
+{%- endmacro %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}AppGrandesEventos{% endblock %}</title>
+    {# Aumente ?v= ao alterar style.css para o navegador baixar a versão nova. #}
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}?v=12">
+    <script src="{{ url_for('static', path='js/app.js') }}" defer></script>
+</head>
+<body>
+    {% set perfil_anatel = request.session.get("perfil_anatel") %}
+    {% block usuario_anatel %}
+    {% if perfil_anatel %}
+    <div class="usuario-anatel">
+        <span class="avatar">{{ iniciais_anatel(perfil_anatel.nome) }}</span>
+        <span>
+            <strong>{{ perfil_anatel.nome }}</strong>
+            <small>{{ [perfil_anatel.cargo, perfil_anatel.departamento] | select | join(" — ") }}</small>
+        </span>
+    </div>
+    {% endif %}
+    {% endblock %}
+    {% block content %}{% endblock %}
+</body>
+</html>

@@ -5,8 +5,8 @@ from unittest.mock import MagicMock
 import pytest
 from psycopg.pq import TransactionStatus
 
-from src.db import dbHandlerBase
-from src.services.users import usuarios
+from src.infra import db_handler
+from src.modules.fiscais import persistencia
 
 
 @pytest.mark.parametrize("retornou_id", [True, False])
@@ -16,10 +16,10 @@ def test_sincronizacao_retorna_id_e_fecha_transacao(monkeypatch, retornou_id):
     cursor = conexao.cursor.return_value.__enter__.return_value
     fiscal = [{"ID_FISCAL": 42}]
     cursor.fetchall.side_effect = [fiscal] if retornou_id else [[], fiscal]
-    monkeypatch.setattr(dbHandlerBase.psycopg.Connection, "connect", MagicMock(return_value=conexao))
-    monkeypatch.setattr(usuarios, "conninfo", lambda: "dbname=teste")
+    monkeypatch.setattr(db_handler.psycopg.Connection, "connect", MagicMock(return_value=conexao))
+    monkeypatch.setattr(persistencia, "conninfo", lambda: "dbname=teste")
 
-    assert usuarios.sincronizar_fiscal({
+    assert persistencia.sincronizar_fiscal({
         "email": "Fiscal@example.test",
         "nome": "Fiscal Teste",
         "departamento": None,
@@ -32,7 +32,7 @@ def test_sincronizacao_retorna_id_e_fecha_transacao(monkeypatch, retornou_id):
     assert 'INSERT INTO "SC_EVENTOS"."TB_FISCAL"' in sql_gravacao.as_string()
     assert 'ON CONFLICT (lower("NA_FISCAL_EMAIL"))' in sql_gravacao.as_string()
     assert 'IS DISTINCT FROM' in sql_gravacao.as_string()
-    assert parametros == ("Fiscal@example.test", "Fiscal Teste", None, "Cargo", "Local")
+    assert parametros == ("Fiscal@example.test", "Fiscal Teste", None, "Cargo", "Local", None)
     assert cursor.execute.call_count == (1 if retornou_id else 2)
     if not retornou_id:
         sql_busca, parametros = cursor.execute.call_args.args

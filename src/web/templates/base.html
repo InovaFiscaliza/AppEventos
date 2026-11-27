@@ -1,0 +1,110 @@
+{% macro iniciais_anatel(nome) -%}
+    {%- set partes = nome.split() -%}
+    {{- (partes[0][0] ~ (partes[-1][0] if partes | length > 1 else "")) | upper if partes else "" -}}
+{%- endmacro %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}AppEventos{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', path='img/anatel_icon.svg') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/AnatelReactiveTheme.AnatelReactiveTheme.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/Desempenho_CW.Desempenho.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/appeventos_base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='css/style.css') }}?v=28">
+    {% block extra_css %}{% endblock %}
+    <script src="{{ url_for('static', path='js/app.js') }}?v=3" defer></script>
+</head>
+<body class="desktop">
+    <div class="layout layout-top fixed-header">
+        <div class="main">
+            <header class="header">
+                <div class="header-top conteudo-centralizado">
+                    <div class="header-content display-flex">
+                        <div class="header-navigation">
+                            
+                            <div class="app-menu-content display-flex align-items-center text-neutral-0">
+                                <div class="header-logo wf-header-brand">
+                                    <a class="application-name display-flex align-items-center full-height wf-header-link" href="{{ url_for('index') }}">
+                                        <img class="app-logo wf-header-logo-mark" src="{{ url_for('static', path='img/anatel_icon.svg') }}" alt="Anatel">
+                                        <span>
+                                            App Eventos
+                                            <small class="font-size-xs font-regular">Fiscalização em Grandes Eventos</small>
+                                        </span>
+                                    </a>
+                                </div>
+
+                                <nav class="app-header-links" aria-label="Menu principal">
+                                    <a href="{{ url_for('cadastro') }}">Cadastro</a>
+                                    <span>Consulta</span>
+                                    <span>Tickets</span>
+                                </nav>
+
+                                <div class="app-topo-evento display-flex align-items-center">
+                                    <label class="margin-bottom-none" for="evento">Evento</label>
+                                    <form class="select-shell font-regular" data-selecao-habilitada="{{ 'true' if acesso_eventos else 'false' }}" method="post" action="{{ url_for('selecionar_contexto') }}">
+                                        <select id="evento" name="id_evento" class="form-control">
+                                            {% if eventos_indisponiveis %}
+                                            <option value="">Eventos indisponíveis</option>
+                                            {% elif acesso_eventos and not acesso_eventos.eventos %}
+                                            <option value="">Sem eventos neste perfil</option>
+                                            {% elif not request.session.get("id_fiscal") %}
+                                            <option value="">Identidade indisponível</option>
+                                            {% else %}
+                                            <option value="">Selecionar</option>
+                                            {% endif %}
+                                            {% if acesso_eventos %}
+                                            {% for evento in acesso_eventos.eventos %}
+                                            <option value="{{ evento.ID_EVENTO }}"{% if evento.ID_EVENTO == evento_ativo %} selected{% endif %}>{{ evento.NO_EVENTO }}</option>
+                                            {% endfor %}
+                                            {% endif %}
+                                            <option value="novo" data-url="{{ url_for('cadastro_evento') }}">+ Criar Evento</option>
+                                        </select>
+                                        {% if acesso_eventos %}<noscript><button type="submit">Aplicar</button></noscript>{% endif %}
+                                    </form>
+                                </div>
+                                <div class="wf-header-user">
+                                    {% if perfil_cabecalho and acesso_eventos %}
+                                    <details class="app-perfil-menu">
+                                        <summary>
+                                            <span class="wf-header-avatar app-perfil-iniciais" aria-hidden="true">
+                                                {{ iniciais_anatel(perfil_cabecalho.nome) }}
+                                            </span>
+                                            <span class="app-perfil-nome" title="{{ perfil_cabecalho.nome }}">{{ perfil_cabecalho.nome }}</span>
+                                        </summary>
+                                        <div class="app-perfil-opcoes">
+                                            <form method="post" action="{{ url_for('selecionar_contexto') }}" aria-label="Selecionar perfil">
+                                                {% for chave, rotulo in acesso_eventos.perfis.items() %}
+                                                <button type="submit" name="perfil" value="{{ chave }}"{% if chave == acesso_eventos.perfil %} aria-current="true"{% endif %}>{{ rotulo }}</button>
+                                                {% endfor %}
+                                            </form>
+                                        </div>
+                                    </details>
+                                    {% elif perfil_cabecalho %}
+                                        <span class="wf-header-avatar app-perfil-iniciais" aria-hidden="true">
+                                            {{ iniciais_anatel(perfil_cabecalho.nome) }}
+                                        </span>
+                                        <span class="app-perfil-nome" title="{{ perfil_cabecalho.nome }}">{{ perfil_cabecalho.nome }}</span>
+                                    {% else %}
+                                        <span class="wf-header-avatar">
+                                            <img src="{{ url_for('static', path='img/profile_out.svg') }}" alt="">
+                                        </span>
+                                        <span class="app-perfil-nome">Anônimo</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <main>
+                {% block breadcrumb %}{% endblock %}
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

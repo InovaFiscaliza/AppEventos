@@ -24,14 +24,6 @@ DB_CFG = {
 # Chave do cookie de sessão; sem a variável, as sessões expiram ao reiniciar o servidor.
 SESSION_SECRET = os.environ.get("SESSION_SECRET") or secrets.token_hex(32)
 
-# Endpoint corporativo para iniciar a autenticação.
-URL_ACESSO_ANATEL = os.environ.get(
-    "URL_ACESSO_ANATEL", "https://fiscalizacao.anatel.gov.br/rffusion/api/users/login_eventos"
-)
-
-# Credencial exclusiva do proxy que entrega o perfil autenticado.
-ANATEL_PROXY_TOKEN = os.environ.get("ANATEL_PROXY_TOKEN", "")
-
 # Papéis operacionais atribuídos no vínculo com o evento (TB_EVENTO_FISCAL).
 PAPEIS_USUARIO = {
     "coordenacao": "Coordenação",

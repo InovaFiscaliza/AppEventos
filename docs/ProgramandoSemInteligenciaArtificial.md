@@ -28,10 +28,10 @@ podem continuar sendo usados sem gerar código por IA.
 ## Como o projeto funciona
 
 1. O navegador solicita um endereço, como `/`.
-2. O FastAPI encontra a rota correspondente em `app/routers/`.
-3. A rota escolhe um template em `app/templates/`.
+2. O FastAPI encontra a rota correspondente em `src/web/routers/`.
+3. A rota escolhe um template em `src/web/templates/`.
 4. O Jinja2 monta a página usando o template e a estrutura de `base.html`.
-5. O navegador carrega o HTML, o CSS e o JavaScript em `app/static/`.
+5. O navegador carrega o HTML, o CSS e o JavaScript em `src/web/static/`.
 
 Em resumo: Python controla a resposta; HTML define o conteúdo; CSS define a
 aparência; JavaScript adiciona comportamentos no navegador. Modificar uma tela
@@ -49,25 +49,26 @@ podman run -d --name appeventos-postgres -e POSTGRES_USER=appeventos -e POSTGRES
 ```
 
 A aplicação lê o endereço do banco na variável `DATABASE_URL`. Sem ela, usa o
-endereço local acima (`app/services/db.py`). Para outro banco:
+configuração padrão de `src/config.py`. Para usar o contêiner local,
+configure a URL com o host e a porta publicados pelo Podman:
 
 ```powershell
 $env:DATABASE_URL = "postgresql+psycopg://usuario:senha@servidor:porta/banco"
 ```
 
-As tabelas são criadas pelo script `local_server/postgres/0001_novobd.sql`, executado com `psql`.
+O PostgreSQL do AppEventos executa `local_server/postgres/0001_novobd.sql` no
+primeiro startup com um volume vazio. Para executar o script manualmente com
+`psql`, use `local_server/postgres/` como diretório de trabalho para que a
+carga de municípios encontre `municipios_ibge.csv`.
 
 Na pasta do projeto, execute:
 
 ```powershell
 uv sync
-uv run uvicorn app.main:app --reload
+uv run uvicorn src.main:app --reload
 ```
 
-O servidor é iniciado pelo `uvicorn` a partir da raiz, indicando o módulo
-`app.main` e o objeto `app`. Não execute `python main.py` dentro de `app/`
-nem `uv run main.py`: o arquivo apenas cria a aplicação e o Python não
-encontra o pacote `app` fora da raiz.
+Execute o Uvicorn a partir da raiz, indicando o módulo `src.main` e o objeto `app`.
 
 Abra `http://127.0.0.1:8000`. Para parar o servidor, pressione `Ctrl+C`.
 Para executar o teste da página inicial:
@@ -78,27 +79,26 @@ uv run pytest
 
 ## Onde alterar
 
-- `app/main.py`: cria a aplicação e registra as rotas e os arquivos estáticos.
-- `app/routers/login.py`: define a rota da página inicial.
-- `app/routers/evento.py`: rotas do formulário e da gravação de eventos.
-- `app/services/db.py`: conexão com o PostgreSQL (`engine` do SQLAlchemy).
-- `app/templates/base.html`: estrutura compartilhada das páginas.
-- `app/templates/login.html`: conteúdo da página inicial.
-- `app/templates/evento_novo.html`: formulário de criação de evento.
-- `app/static/style.css`: estilos da interface.
-- `app/static/app.js`: JavaScript da interface.
-- `app/static/rf-fusion/`: local reservado aos recursos visuais originais.
+- `src/main.py`: cria a aplicação e registra as rotas e os arquivos estáticos.
+- `src/web/routers/index.py`: define a rota da página inicial.
+- `src/web/routers/evento.py`: rotas do formulário e da gravação de eventos.
+- `src/infra/postgres.py`: conexão com o PostgreSQL (`engine` do SQLAlchemy).
+- `src/web/templates/base.html`: estrutura compartilhada das páginas.
+- `src/web/templates/index.html`: conteúdo da página inicial.
+- `src/web/templates/cadastro/evento_novo.html`: formulário de criação de evento.
+- `src/web/static/css/style.css`: estilos da interface.
+- `src/web/static/js/app.js`: JavaScript da interface.
 - `tests/`: testes automatizados.
 - `local_server/postgres/`: migrações SQL do banco.
 - `pyproject.toml`: dependências e configuração do projeto.
 
 Para criar uma nova tela, normalmente você altera:
 
-1. `app/routers/<tela>.py` (novo): rota da tela.
-2. `app/main.py`: registro do `router` com `app.include_router(...)`.
-3. `app/templates/<tela>.html` (novo): conteúdo da tela.
-4. `app/static/style.css` e a versão `?v=` em `base.html`, se houver estilo novo.
-5. `app/static/app.js`, se houver comportamento no navegador.
+1. `src/web/routers/<tela>.py` (novo): rota da tela.
+2. `src/main.py`: registro do `router` com `app.include_router(...)`.
+3. `src/web/templates/<tela>.html` (novo): conteúdo da tela.
+4. `src/web/static/css/style.css` e a versão `?v=` em `base.html`, se houver estilo novo.
+5. `src/web/static/js/app.js`, se houver comportamento no navegador.
 6. `tests/test_<tela>.py` (novo): testes da rota.
 7. `local_server/postgres/`, se a tela exigir nova estrutura no banco.
 
@@ -118,9 +118,9 @@ Para criar uma nova tela, normalmente você altera:
    não adicionados ao Git aparecem no status, mas não no `git diff` comum;
    abra-os no editor para revisá-los.
 
-Comece alterando um texto existente em `app/templates/login.html`, confira o
+Comece alterando um texto existente em `src/web/templates/index.html`, confira o
 resultado em `/` e depois ajuste os testes correspondentes em
-`tests/test_login.py` quando o comportamento esperado mudar. Esse exercício
+`tests/test_index.py` quando o comportamento esperado mudar. Esse exercício
 ajuda a conhecer o fluxo sem precisar criar um módulo inteiro.
 
 ## Criar uma tela
@@ -132,7 +132,7 @@ automaticamente.
 
 ### 1. Criar a rota
 
-Abra `app/routers/login.py` e acrescente ao final do arquivo:
+Abra `src/web/routers/index.py` e acrescente ao final do arquivo:
 
 ```python
 @router.get("/exemplo", response_class=HTMLResponse)
@@ -141,15 +141,15 @@ async def exemplo(request: Request) -> HTMLResponse:
 	return templates.TemplateResponse(request=request, name="exemplo.html")
 ```
 
-O endereço `/exemplo` identifica a página no navegador. O arquivo `login.py` já
+O endereço `/exemplo` identifica a página no navegador. O arquivo `index.py` já
 possui os imports, o `router` e `templates` usados pelo exemplo; não é necessário
-copiá-los novamente. Ele também já está registrado em `app/main.py`. Ao criar
+copiá-los novamente. Ele também já está registrado em `src/main.py`. Ao criar
 um arquivo de rotas separado, importe-o e registre seu `router` em
-`app/main.py` com `app.include_router(...)`.
+`src/main.py` com `app.include_router(...)`.
 
 ### 2. Criar o template
 
-Crie `app/templates/exemplo.html` com este conteúdo:
+Crie `src/web/templates/exemplo.html` com este conteúdo:
 
 ```html
 {% extends "base.html" %}
@@ -170,7 +170,7 @@ Jinja2 e devem ser preservados durante a edição visual.
 
 ### 3. Ajustar aparência e comportamento
 
-Acrescente ao final de `app/static/style.css` as regras da página, por exemplo:
+Acrescente ao final de `src/web/static/css/style.css` as regras da página, por exemplo:
 
 ```css
 .pagina-exemplo {
@@ -181,9 +181,9 @@ Acrescente ao final de `app/static/style.css` as regras da página, por exemplo:
 ```
 
 Depois de alterar o CSS, incremente o número após `?v=` no endereço de
-`style.css` em `app/templates/base.html`, para que o navegador receba a versão
+`style.css` em `src/web/templates/base.html`, para que o navegador receba a versão
 atualizada. Comportamentos interativos podem ser acrescentados em
-`app/static/app.js`.
+`src/web/static/js/app.js`.
 
 O Pinegrow pode ajudar na edição visual de HTML e CSS, mas pode não montar
 templates Jinja2 herdados. Confira sempre a página pelo FastAPI. O inspetor do
@@ -195,7 +195,7 @@ são temporárias e precisam ser reproduzidas no arquivo CSS.
 Na pasta do projeto, inicie o servidor:
 
 ```powershell
-uv run uvicorn app.main:app --reload
+uv run uvicorn src.main:app --reload
 ```
 
 Abra `http://127.0.0.1:8000/exemplo` e atualize o navegador depois de alterar o
@@ -210,7 +210,7 @@ Crie `tests/test_exemplo.py` para verificar a nova rota:
 ```python
 from fastapi.testclient import TestClient
 
-from app.main import app
+from src.main import app
 
 
 def test_exemplo_exibe_pagina() -> None:
@@ -240,7 +240,7 @@ uv add sqlalchemy "psycopg[binary]" python-multipart
 
 ### Fluxo
 
-1. Em `login.html`, o campo **Evento** tem a opção `+ Criar Evento` com o
+1. No cabeçalho compartilhado em `base.html`, o campo **Evento** tem a opção `+ Criar Evento` com o
    atributo `data-url`, gerado por `url_for('novo_evento')`.
 2. Em `app.js`, o evento `change` do campo lê o `data-url` da opção escolhida
    e leva o navegador até `/eventos/novo`.
@@ -280,22 +280,22 @@ cobrem a opção na tela de login, o formulário, a gravação válida e os dado
 - **A página não abre:** confira se o servidor está em execução, se o endereço
   e a porta estão corretos e leia as mensagens no terminal do servidor.
 - **`ModuleNotFoundError: No module named 'app'`:** o servidor foi iniciado
-  fora da raiz. Volte com `cd ..` e use `uv run uvicorn app.main:app --reload`.
+  fora da raiz. Volte com `cd ..` e use `uv run uvicorn src.main:app --reload`.
 - **`Failed to spawn: main.py`:** `uv run` recebeu um arquivo inexistente na
   raiz. Use o comando do `uvicorn` acima.
 - **Erro ao salvar evento:** confira se o contêiner do PostgreSQL está ativo
   (`podman ps`), se `DATABASE_URL` aponta para ele e se as migrações foram
   aplicadas.
 - **A rota retorna 404:** verifique o endereço no navegador, o `@router.get`
-  e se o `router` do arquivo foi registrado em `app/main.py`.
+  e se o `router` do arquivo foi registrado em `src/main.py`.
 - **O template não é encontrado:** confira o nome passado a
-  `TemplateResponse` e o caminho e a grafia do arquivo em `app/templates/`.
+  `TemplateResponse` e o caminho e a grafia do arquivo em `src/web/templates/`.
 - **O estilo não mudou:** salve o CSS, incremente sua versão em `base.html`
   e atualize a página. No inspetor (`F12`), confira se a regra é aplicada ao
   elemento e se outra regra a substitui.
 - **Um teste falhou:** leia o nome do teste, a primeira mensagem de erro e a
   linha indicada. Execute apenas esse arquivo, por exemplo
-  `uv run pytest tests/test_login.py -q`, corrija o problema e execute
+  `uv run pytest tests/test_index.py -q`, corrija o problema e execute
   `uv run pytest` novamente.
 
 Faça uma alteração por vez e repita a verificação. Evite apagar dados ou

@@ -14,43 +14,15 @@ AppGrandesEventos é um sistema de monitoração de espectro eletromagnético pa
 - **Backend**: Python 3.13+, FastAPI + Jinja2
 - **Banco**: PostgreSQL 16 via SQLAlchemy + psycopg (binary)
 - **Frontend**: FastAPI com Jinja2 Templates e arquivos estáticos (CSS/JS)
-- **Referência visual**: OutSystems/RF.Fusion, com recursos preservados em `app/static/rf-fusion/`
-- **Autenticação**: N/A (aplicação local/institucional)
-- **PWA**: Service Worker para funcionalidade offline parcial (`app/static/sw.js`)
+- **Referência visual**: OutSystems/RF.Fusion, com recursos em `src/web/static/`
+- **Autenticação**: sessão institucional com integração Anatel e RF.Fusion
 - **Dependências**: gerenciadas via `pyproject.toml` + `uv`
 - **Gerenciador de pacotes**: `uv` — usar `uv add <pacote>` para instalar, `uv sync` para sincronizar, `uv run <script.py>` para executar scripts (não usar `pip install`)
 
 ## Estrutura do Projeto
 
-```
-app/
-    __init__.py
-    config.py              # Constantes e configurações centralizadas
-    routers/               # Rotas FastAPI (login, consultar, inserir, bsr_erb, etc.)
-        login.py           #   Rota principal / (login)
-        consultar.py       #   Rota /consultar
-        inserir.py         #   Rota /inserir
-        bsr_erb.py         #   Rota /bsr_erb
-        busca.py           #   Rota /busca
-        selecao.py         #   Rota / (seleção de evento)
-        tabela_ute.py      #   Rota /tabela_ute
-    services/
-        db.py              # Engine SQLAlchemy central
-        postgres.py        # Serviço de dados via PostgreSQL
-    static/                # CSS, JS, Service Worker, manifest e recursos OutSystems/RF.Fusion
-        rf-fusion/         # CSS e recursos visuais de referência do OutSystems/RF.Fusion
-    templates/             # Jinja2 templates HTML
-        base.html          # Template base com layout padronizado
-        partials/          # Componentes parciais (header)
-    utils/
-        formatters.py      # Funções utilitárias (imagens, normalização, coordenadas)
-        offline.py         # Utilitários para modo offline
-db/
-    schema.sql             # Schema completo do PostgreSQL
-scripts/
-    executa_schema.py      # Script para executar schema.sql no banco
-requisitos/                # Documentação de requisitos
-```
+Consulte o [mapa de arquivos do README](../README.md#organização-de-src) e
+as [convenções de organização do AGENTS.md](../AGENTS.md#organização-de-src).
 
 ## Padrões de Código
 
@@ -58,10 +30,10 @@ requisitos/                # Documentação de requisitos
 
 - **Versão**: Python 3.13+ (type hints obrigatórios, union types com `X | Y`)
 - **Identação**: 4 espaços (PEP 8)
-- **Docstrings**: """Docstrings descritivas""" em módulos e funções públicas
+- Para docstrings e comentários, siga o padrão compartilhado em [AGENTS.md](../AGENTS.md).
 - **Imports**: ordem padrão: built-in → third-party → módulos do app
 - **Nomes**: `snake_case` para funções/variáveis, `CamelCase` para classes
-- **Banco**: SQLAlchemy core (text()) — NÃO usar ORM models
+- **Banco**: Operações PostgreSQL via `DbHandler` e psycopg
 - **Erros**: try/except com logging, evitar silenciar exceções
 
 ### Legibilidade para Usuários Humanos
@@ -76,26 +48,25 @@ requisitos/                # Documentação de requisitos
 ### FastAPI (principal)
 
 - Rotas definidas com `APIRouter()` nomeado como `router`
-- Templates Jinja2 carregados com `Jinja2Templates(directory="app/templates")`
+- Templates Jinja2 carregados com `Jinja2Templates` apontando para `src/web/templates/`
 - Sessão gerenciada via `SessionMiddleware` com cookie assinado
-- Dados da sessão: `spreadsheet_id`, `evento_nome`, `view`
+- Dados da sessão de login: `id_fiscal` e `perfil_anatel`
 - Respostas: `HTMLResponse`, `RedirectResponse` ou `TemplateResponse`
-- Rotas sempre assíncronas (`async def`)
+- Rotas que acessam o driver PostgreSQL síncrono usam `def`
 - Flash messages via `request.session.pop("flash_success/error", None)`
 
 ### Frontend (HTML/CSS/JS)
 
 - HTML com Jinja2 (herança via `{% extends "base.html" %}`)
-- CSS em `app/static/style.css`
-- JavaScript modular em `app/static/*.js`
+- CSS em `src/web/static/css/style.css`
+- JavaScript modular em `src/web/static/js/*.js`
 - Botões padronizados com altura via variável CSS `BTN_HEIGHT`
 - Botões de adicionar representados por `+` devem seguir o padrão visual `.teq-list-btn` do teste de etiquetagem e ficar alinhados à direita quando estiverem acima de um campo.
-- PWA: arquivos em `app/static/` (sw.js, manifest.json, offline.html)
 
 ### Configurações
 
-- Constantes centralizadas em `app/config.py`
-- Conexão DB em `app/services/db.py` (lê: env → secrets.toml → fallback local)
+- Constantes centralizadas em `src/config.py`
+- Configuração do PostgreSQL em `src/infra/postgres.py`, com prioridade para `DATABASE_URL`
 - Variáveis de ambiente: `DATABASE_URL`
 
 ### Scripts
@@ -118,7 +89,6 @@ requisitos/                # Documentação de requisitos
 
 - No FastAPI, botões e links seguem design consistente via `base.html`
 - Preservar a compatibilidade visual com OutSystems/RF.Fusion ao alterar telas e componentes.
-- Não remover, substituir ou reformatar em massa os arquivos de referência em `app/static/rf-fusion/`.
 - Cores institucionais (ANATEL): azul escuro predominante
 - Interface responsiva e mobile-first (app usado em campo com celular)
 - Ícones: emojis (📋, 📝, 📵, etc.) nos botões
@@ -142,8 +112,7 @@ requisitos/                # Documentação de requisitos
 
 ### Cache PWA
 
-- Sempre que alterar arquivos em `app/static/`, atualizar a versão do cache em `app/static/sw.js` e a versão de registro em `app/static/sw-register.js`.
-- Quando a alteração for em `style.css`, também incrementar o parâmetro de versão de `/static/style.css` em `app/templates/base.html`.
+- Quando a alteração for em `style.css`, também incrementar o parâmetro de versão de `/static/css/style.css` em `src/web/templates/base.html`.
 
 ### Tickets e auditoria
 

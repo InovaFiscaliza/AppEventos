@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% set tipos_cadastro = {
+    "evento": ("Evento", "cadastro_evento"),
+    "teste-e-etiquetagem": ("Teste e etiquetagem", "cadastro_teste_etiquetagem"),
+    "incidente": ("Incidente", "cadastro_incidente"),
+    "emissao-suspeita": ("Emissão suspeita", "cadastro_emissao_suspeita"),
+} %}
+
+{% block title %}{% if tipo_cadastro %}{{ tipos_cadastro[tipo_cadastro][0] }} - {% endif %}Cadastro - AppEventos{% endblock %}
+
+{% block content %}
+<div class="cadastro-modulo">
+    <nav class="breadcrumb cadastro-caminho" aria-label="Caminho de navegação">
+        <a href="{{ url_for('index') }}" aria-label="Início">
+            <span class="cadastro-icone cadastro-icone-inicio" aria-hidden="true"></span>
+        </a>
+        <span class="breadcrumb-separator" aria-hidden="true">›</span>
+        {% if tipo_cadastro %}
+        <a href="{{ url_for('cadastro') }}">Cadastro</a>
+        <span class="breadcrumb-separator" aria-hidden="true">›</span>
+        <span aria-current="page">{{ tipos_cadastro[tipo_cadastro][0] }}</span>
+        {% else %}
+        <span aria-current="page">Cadastro</span>
+        {% endif %}
+    </nav>
+
+    <section class="cadastro-tipos wf-panel" aria-labelledby="cadastro-tipos-titulo">
+        <h1 id="cadastro-tipos-titulo" class="wf-panel-title">Tipo de registro</h1>
+        <nav class="cadastro-opcoes" aria-label="Tipos de cadastro">
+            {% for identificador, (rotulo, rota) in tipos_cadastro.items() %}
+            <a class="cadastro-opcao" href="{{ url_for(rota) }}"
+               {% if identificador == tipo_cadastro %}aria-current="page"{% endif %}>
+                <span class="cadastro-icone cadastro-icone-{{ identificador }}" aria-hidden="true"></span>
+                {{ rotulo }}
+            </a>
+            {% endfor %}
+        </nav>
+    </section>
+
+    {% block cadastro_formulario %}
+    {% if tipo_cadastro %}
+    <p class="cadastro-disponibilidade">O formulário deste tipo de cadastro ainda está em preparação.</p>
+    {% endif %}
+    {% endblock %}
+</div>
+{% endblock %}
